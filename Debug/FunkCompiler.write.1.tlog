@@ -126,3 +126,7 @@ C:\Users\Robert\Projekte\FunkAsm\FunkCompiler\Lexer.flex.cpp
 C:\Users\Robert\Projekte\FunkAsm\FunkCompiler\Grammar.tab.cpp
 ^Lexer.l
 C:\Users\Robert\Projekte\FunkAsm\FunkCompiler\Lexer.flex.cpp
+^Grammar.y
+C:\Users\Robert\Projekte\FunkAsm\FunkCompiler\Grammar.tab.cpp
+^Lexer.l
+C:\Users\Robert\Projekte\FunkAsm\FunkCompiler\Lexer.flex.cpp

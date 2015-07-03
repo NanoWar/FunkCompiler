@@ -80,10 +80,10 @@
     <Flex Include="Lexer.l" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AST.cpp" />
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Grammar.tab.cpp" />
+    <ClCompile Include="Identifier.cpp" />
     <ClCompile Include="Lexer.flex.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Register.cpp" />

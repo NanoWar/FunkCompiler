@@ -39,16 +39,8 @@ void print_indent(int depth) {
 void print_node(Node *n, int depth) {
 	int i = 0;
 	print_indent(depth);
-	if (n->n_elems == 0) {
-		print ("%s\n", n->type);
-	} else {
-		print ("(%s\n", n->type);
-		for (i = 0; i < n->n_elems; ++i) {
-			print_node(n->elems[i], depth + indent_step);
-		}
-		print_indent(depth);
-		print (")\n");
-	}
+	print(n->GetIdentifier().c_str());
+	print ("\n");
 }
 
 

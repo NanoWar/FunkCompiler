@@ -1,53 +1,29 @@
 #ifndef AST_h
 #define AST_h
 
-class Node
-{
-public:
-	// Value
-	bool own_string;
-	char const *type;
-
-	// Navigation
-	Node *next;
-	Node *prev;
-	Node *parent;
-
-	// Real value
-	bool is_proxy;
-	const char *proxy;
-	const char *format;
-	bool has_value;
-	int value;
-
-	// Children
-	int n_elems;
-	Node *elems[];
-};
-
 #include "StringHelper.h"
 #include <typeinfo>
 #include <map>
 
-class NodeBase;
+class Node;
 class ProgramNode;
 
-extern map<NodeBase*, string> NodeIdentifiers;
-extern map<string, NodeBase*> IdentifiableNodes;
+extern map<Node*, string> NodeIdentifiers;
+extern map<string, Node*> IdentifiableNodes;
 
-class NodeBase
+class Node
 {
 public:
 	string Name;
 	int SourceLine;
-	NodeBase *Parent;
+	Node *Parent;
 
-	NodeBase() : Parent(NULL) { Name = ""; }
+	Node() : Parent(NULL) { Name = ""; }
 
 	string GetIdentifier();
 };
 
-template<typename OwnType, typename ItemType, typename BaseType = NodeBase>
+template<typename OwnType, typename ItemType, typename BaseType = Node>
 class ContainerNode : public BaseType
 {
 public:
@@ -59,7 +35,7 @@ public:
 	OwnType *Extend(ItemType *node)
 	{
 		Children.push_back(node);
-		((NodeBase *) node)->Parent = this;
+		((Node *) node)->Parent = this;
 		return(OwnType *) this;
 	}
 
@@ -70,7 +46,7 @@ public:
 		for(int i = 0; i < n; i++) {
 			auto node = va_arg(params, ItemType *);
 			Children.push_back(node);
-			((NodeBase *) node)->Parent = this;
+			((Node *) node)->Parent = this;
 		}
 		va_end(params);
 		return(OwnType *) this;
@@ -84,7 +60,7 @@ public:
 
 };
 
-class NameNode : public NodeBase
+class NameNode : public Node
 {
 public:
 	NameNode(string name) { Name = name; }
@@ -96,14 +72,14 @@ public:
 	FieldsNode(NameNode *nameNode) : ContainerNode(nameNode) {}
 };
 
-class IdentNode : public NodeBase
+class IdentNode : public Node
 {
 public:
 	FieldsNode *Fields;
 	IdentNode(NameNode *nameNode, FieldsNode *fieldsNode) : Fields(fieldsNode) { Name = nameNode->Name; }
 };
 
-class ItemNode : public NodeBase
+class ItemNode : public Node
 {
 public:
 };
@@ -119,7 +95,7 @@ public:
 	ModuleNode(NameNode *nameNode) { Name = nameNode->Name; }
 };
 
-class ParameterNode : public NodeBase
+class ParameterNode : public Node
 {
 public:
 	ParameterNode(NameNode *nameNode) { Name = nameNode->Name; }
@@ -130,7 +106,7 @@ class ParametersNode : public ContainerNode<ParametersNode, ParameterNode>
 public:
 };
 
-class OutputNode : public NodeBase
+class OutputNode : public Node
 {
 public:
 };

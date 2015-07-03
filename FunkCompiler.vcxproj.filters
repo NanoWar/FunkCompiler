@@ -27,9 +27,6 @@
     <ClCompile Include="Compiler.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="AST.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="Console.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -43,6 +40,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="StringHelper.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Identifier.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
