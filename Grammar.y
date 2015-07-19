@@ -5,76 +5,61 @@ extern char *yytext;
 
 void yyerror(const char *s);
 
-#define YYERROR_VERBOSE
-#define YYSTYPE Node *
+#include "Global.h"
 #include "AST.h"
+
+#define YYERROR_VERBOSE
+
+extern StatementsNode *Program;
 
 %}
 
+%union {
+ int token;
+ string *name;
+ StatementsNode *stmts;
+ StatementNode *stmt;
+ ParametersNode *params;
+ ParameterNode *param;
+ FunctionDeclNode *fn;
+ ModuleNode *mod;
+}
+
 %debug
 
-%token SHL
-%token SHR
-%token LE
-%token EQEQ
-%token NE
-%token GE
-%token ANDAND
-%token OROR
-%token SHLEQ
-%token SHREQ
-%token MINUSEQ
-%token MINUSMINUS
-%token ANDEQ
-%token OREQ
-%token PLUSEQ
-%token PLUSPLUS
-%token STAREQ
-%token SLASHEQ
-%token CARETEQ
-%token PERCENTEQ
-%token DOTDOT
-%token DOTDOTDOT
-%token MOD_SEP
-%token RARROW
-%token FAT_ARROW
+%type <stmts> stmts program
+%type <stmt> stmt fn mod
+%type <params> params
+%type <param> param
+%type <name> name
 
-%token LIT_CHARS
-%token LIT_INTEGER
-%token LIT_STR
-%token NAME
+
+%token <token> SHL SHR
+%token <token> LE EQEQ NE GE
+%token <token> ANDAND OROR
+%token <token> SHLEQ SHREQ MINUSEQ ANDEQ OREQ PLUSEQ STAREQ SLASHEQ CARETEQ PERCENTEQ
+
+%token <token> MINUSMINUS PLUSPLUS
+%token <token> DOTDOT DOTDOTDOT MOD_SEP
+%token <token> RARROW FAT_ARROW
+
+%token <name> TINTEGER
+%token <name> TCHARS TSTRING NAME
 
 // Keywords
-%token LET
-%token IF
-%token ELIF
-%token ELSE
-%token MATCH
-%token LOOP
-%token END
-%token RETURN
-
-%token FN
-%token MOD
-%token ENUM
-%token STRUCT
-
-%token TRUE
-%token FALSE
+%token <token> LET IF ELIF ELSE MATCH LOOP END RETURN
+%token <token> FN MOD ENUM STRUCT
+%token <token> TRUE FALSE
 
 // Types
-%token BYTE
-%token WORD
-%token BOOL
-%token REG8
-%token REG16
-
-// Start
-%start program
+%token <token> BYTE WORD BOOL REG8 REG16
 
 //%right '='
 %left  '+' '-'
 %left  '*' '/'
+
+// Start
+%start program
 
 %%
 
@@ -83,42 +68,38 @@ void yyerror(const char *s);
 ////////////////////////////////////////////////////////////////////////
 
 program
-: items_maybe		{ $$ = new ProgramNode(); }
+: stmts				{ Program = $<stmts>1; }
 ;
 
-items_maybe
-: items
-| /* empty */
+stmts
+: /* empty */		{ $$ = new StatementsNode(); }
+| stmt				{ $$ = new StatementsNode(); $$->Extend($<stmt>1); }
+| stmts stmt		{ $1->Extend($<stmt>2); }
 ;
 
-items
-: item				{ $$ = $$.Extend($1); }
-| items item		{ $$ = $1.Extend($2); }
-;
-
-item
-: fn
-| mod
+stmt
+: fn				/*{ $$ = $<stmt>1; }*/
+| mod				/*{ $$ = $<stmt>1; }*/
 ;
 
 fn
-: FN name fn_params_maybe { $$ = new FunctionNode($2); delete $2;}
+: FN name '(' params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<name>2, $<params>4, $<stmts>7); delete $2;}
 ;
-fn_params_maybe
-: '(' fn_params ')'		{ $$ = $2 }
-| /* empty */
+params
+: /* empty */			{ $$ = new ParametersNode(); }
+| param					{ $$ = new ParametersNode(); $$->Extend($<param>1); }
+| params ',' param		{ $$ = $<params>1->Extend($<param>3); }
 ;
-fn_params
-: name					{ $$ = new ParametersNode($1); delete $1; }
-| fn_params ',' name	{ $$ = $$.Extend($3); delete $3; }
+param
+: name					{ $$ = new ParameterNode($<name>1); delete $1; }
 ;
 
 mod
-: MOD name	{ $$ = new ModuleNode($2); delete $2; }
+: MOD name '{' stmts '}'	{ $$ = new ModuleNode($<name>2, $<stmts>4); delete $2; }
 ;
 
 name
-: NAME					{ $$ = new NameNode($1); }
+: NAME					{ $$ = new string(yytext); }
 ;
 
 %%

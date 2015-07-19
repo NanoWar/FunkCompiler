@@ -705,6 +705,7 @@ char *yytext;
 #include <iostream>
 using namespace std;
 #define YY_DECL extern "C" int yylex()
+#include "AST.h"
 #include "Grammar.tab.h"
 
 
@@ -723,7 +724,7 @@ using namespace std;
 
 
 
-#line 727 "Lexer.flex.cpp"
+#line 728 "Lexer.flex.cpp"
 
 #define INITIAL 0
 #define str 1
@@ -929,10 +930,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 32 "Lexer.l"
+#line 33 "Lexer.l"
 
 
-#line 936 "Lexer.flex.cpp"
+#line 937 "Lexer.flex.cpp"
 
 	if ( !(yy_init) )
 		{
@@ -1033,522 +1034,522 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 34 "Lexer.l"
+#line 35 "Lexer.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 35 "Lexer.l"
+#line 36 "Lexer.l"
 { yyless(0); BEGIN(INITIAL); }
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 37 "Lexer.l"
+#line 38 "Lexer.l"
 { }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 39 "Lexer.l"
+#line 40 "Lexer.l"
 { yy_push_state(blockcomment); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 40 "Lexer.l"
+#line 41 "Lexer.l"
 { yy_pop_state(); }
 	YY_BREAK
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 41 "Lexer.l"
+#line 42 "Lexer.l"
 { }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 43 "Lexer.l"
+#line 44 "Lexer.l"
 { BEGIN(linecomment); }
 	YY_BREAK
 case 8:
 /* rule 8 can match eol */
 YY_RULE_SETUP
-#line 44 "Lexer.l"
+#line 45 "Lexer.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 45 "Lexer.l"
+#line 46 "Lexer.l"
 { }
 	YY_BREAK
 /* Keywords */
 case 10:
 YY_RULE_SETUP
-#line 48 "Lexer.l"
+#line 49 "Lexer.l"
 { return LET; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 49 "Lexer.l"
+#line 50 "Lexer.l"
 { return IF; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 50 "Lexer.l"
+#line 51 "Lexer.l"
 { return ELIF; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 51 "Lexer.l"
+#line 52 "Lexer.l"
 { return ELSE; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 52 "Lexer.l"
+#line 53 "Lexer.l"
 { return MATCH; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 53 "Lexer.l"
+#line 54 "Lexer.l"
 { return LOOP; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 54 "Lexer.l"
+#line 55 "Lexer.l"
 { return END; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 55 "Lexer.l"
+#line 56 "Lexer.l"
 { return RETURN; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 57 "Lexer.l"
+#line 58 "Lexer.l"
 { return FN; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 58 "Lexer.l"
+#line 59 "Lexer.l"
 { return MOD; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 59 "Lexer.l"
+#line 60 "Lexer.l"
 { return ENUM; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 60 "Lexer.l"
+#line 61 "Lexer.l"
 { return STRUCT; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 62 "Lexer.l"
+#line 63 "Lexer.l"
 { return TRUE; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 63 "Lexer.l"
+#line 64 "Lexer.l"
 { return FALSE; }
 	YY_BREAK
 /* Types */
 case 24:
 YY_RULE_SETUP
-#line 66 "Lexer.l"
+#line 67 "Lexer.l"
 { return BYTE; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 67 "Lexer.l"
+#line 68 "Lexer.l"
 { return WORD; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 68 "Lexer.l"
+#line 69 "Lexer.l"
 { return BOOL; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 69 "Lexer.l"
+#line 70 "Lexer.l"
 { return REG8; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 70 "Lexer.l"
+#line 71 "Lexer.l"
 { return REG8; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 71 "Lexer.l"
+#line 72 "Lexer.l"
 { return REG16; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 73 "Lexer.l"
+#line 74 "Lexer.l"
 { return NAME; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 75 "Lexer.l"
-{ BEGIN(suffix); return LIT_INTEGER; }
+#line 76 "Lexer.l"
+{ BEGIN(suffix); return TINTEGER; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 76 "Lexer.l"
-{ BEGIN(suffix); return LIT_INTEGER; }
+#line 77 "Lexer.l"
+{ BEGIN(suffix); return TINTEGER; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 77 "Lexer.l"
-{ BEGIN(suffix); return LIT_INTEGER; }
+#line 78 "Lexer.l"
+{ BEGIN(suffix); return TINTEGER; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 78 "Lexer.l"
-{ BEGIN(suffix); return LIT_INTEGER; }
+#line 79 "Lexer.l"
+{ BEGIN(suffix); return TINTEGER; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 80 "Lexer.l"
+#line 81 "Lexer.l"
 { return ';'; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 81 "Lexer.l"
+#line 82 "Lexer.l"
 { return ','; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 82 "Lexer.l"
+#line 83 "Lexer.l"
 { return DOTDOTDOT; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 83 "Lexer.l"
+#line 84 "Lexer.l"
 { return DOTDOT; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 84 "Lexer.l"
+#line 85 "Lexer.l"
 { return '.'; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 85 "Lexer.l"
+#line 86 "Lexer.l"
 { return '('; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 86 "Lexer.l"
+#line 87 "Lexer.l"
 { return ')'; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 87 "Lexer.l"
+#line 88 "Lexer.l"
 { return '{'; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 88 "Lexer.l"
+#line 89 "Lexer.l"
 { return '}'; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 89 "Lexer.l"
+#line 90 "Lexer.l"
 { return '['; }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 90 "Lexer.l"
+#line 91 "Lexer.l"
 { return ']'; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 91 "Lexer.l"
+#line 92 "Lexer.l"
 { return '@'; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 92 "Lexer.l"
+#line 93 "Lexer.l"
 { return '#'; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 94 "Lexer.l"
+#line 95 "Lexer.l"
 { return '~'; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 95 "Lexer.l"
+#line 96 "Lexer.l"
 { return MOD_SEP; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 96 "Lexer.l"
+#line 97 "Lexer.l"
 { return ':'; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 97 "Lexer.l"
+#line 98 "Lexer.l"
 { return '$'; }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 98 "Lexer.l"
+#line 99 "Lexer.l"
 { return '?'; }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 99 "Lexer.l"
+#line 100 "Lexer.l"
 { return EQEQ; }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 100 "Lexer.l"
+#line 101 "Lexer.l"
 { return FAT_ARROW; }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 101 "Lexer.l"
+#line 102 "Lexer.l"
 { return '='; }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 102 "Lexer.l"
+#line 103 "Lexer.l"
 { return NE; }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 103 "Lexer.l"
+#line 104 "Lexer.l"
 { return '!'; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 104 "Lexer.l"
+#line 105 "Lexer.l"
 { return LE; }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 105 "Lexer.l"
+#line 106 "Lexer.l"
 { return SHL; }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 106 "Lexer.l"
+#line 107 "Lexer.l"
 { return SHLEQ; }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 107 "Lexer.l"
+#line 108 "Lexer.l"
 { return '<'; }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 108 "Lexer.l"
+#line 109 "Lexer.l"
 { return GE; }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 109 "Lexer.l"
+#line 110 "Lexer.l"
 { return SHR; }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 110 "Lexer.l"
+#line 111 "Lexer.l"
 { return SHREQ; }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 111 "Lexer.l"
+#line 112 "Lexer.l"
 { return '>'; }
 	YY_BREAK
 /* CHARS */
 case 66:
 YY_RULE_SETUP
-#line 114 "Lexer.l"
+#line 115 "Lexer.l"
 { BEGIN(ltorchar); yymore(); }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 115 "Lexer.l"
-{ BEGIN(suffix); return LIT_CHARS; }
+#line 116 "Lexer.l"
+{ BEGIN(suffix); return TCHARS; }
 	YY_BREAK
 case YY_STATE_EOF(ltorchar):
-#line 116 "Lexer.l"
+#line 117 "Lexer.l"
 { return -1; }
 	YY_BREAK
 case 68:
 /* rule 68 can match eol */
 YY_RULE_SETUP
-#line 117 "Lexer.l"
+#line 118 "Lexer.l"
 { yymore(); }
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 118 "Lexer.l"
+#line 119 "Lexer.l"
 { yymore(); }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 119 "Lexer.l"
+#line 120 "Lexer.l"
 { yymore(); }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 120 "Lexer.l"
+#line 121 "Lexer.l"
 { return -1; }
 	YY_BREAK
 case 72:
 /* rule 72 can match eol */
 YY_RULE_SETUP
-#line 121 "Lexer.l"
+#line 122 "Lexer.l"
 { yymore(); }
 	YY_BREAK
 /* STRING */
 case 73:
 YY_RULE_SETUP
-#line 124 "Lexer.l"
+#line 125 "Lexer.l"
 { BEGIN(str); yymore(); }
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 125 "Lexer.l"
-{ BEGIN(suffix); return LIT_STR; }
+#line 126 "Lexer.l"
+{ BEGIN(suffix); return TSTRING; }
 	YY_BREAK
 case YY_STATE_EOF(str):
-#line 126 "Lexer.l"
+#line 127 "Lexer.l"
 { return -1; }
 	YY_BREAK
 case 75:
 /* rule 75 can match eol */
 YY_RULE_SETUP
-#line 127 "Lexer.l"
+#line 128 "Lexer.l"
 { yymore(); }
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 128 "Lexer.l"
+#line 129 "Lexer.l"
 { yymore(); }
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 129 "Lexer.l"
+#line 130 "Lexer.l"
 { yymore(); }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 130 "Lexer.l"
+#line 131 "Lexer.l"
 { return -1; }
 	YY_BREAK
 case 79:
 /* rule 79 can match eol */
 YY_RULE_SETUP
-#line 131 "Lexer.l"
+#line 132 "Lexer.l"
 { yymore(); }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 133 "Lexer.l"
+#line 134 "Lexer.l"
 { return RARROW; }
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 134 "Lexer.l"
+#line 135 "Lexer.l"
 { return '-'; }
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 135 "Lexer.l"
+#line 136 "Lexer.l"
 { return MINUSMINUS; }
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 136 "Lexer.l"
+#line 137 "Lexer.l"
 { return MINUSEQ; }
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 137 "Lexer.l"
+#line 138 "Lexer.l"
 { return ANDAND; }
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 138 "Lexer.l"
+#line 139 "Lexer.l"
 { return '&'; }
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 139 "Lexer.l"
+#line 140 "Lexer.l"
 { return ANDEQ; }
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 140 "Lexer.l"
+#line 141 "Lexer.l"
 { return OROR; }
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 141 "Lexer.l"
+#line 142 "Lexer.l"
 { return '|'; }
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 142 "Lexer.l"
+#line 143 "Lexer.l"
 { return OREQ; }
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 143 "Lexer.l"
+#line 144 "Lexer.l"
 { return '+'; }
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 144 "Lexer.l"
+#line 145 "Lexer.l"
 { return PLUSPLUS; }
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 145 "Lexer.l"
+#line 146 "Lexer.l"
 { return PLUSEQ; }
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 146 "Lexer.l"
+#line 147 "Lexer.l"
 { return '*'; }
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 147 "Lexer.l"
+#line 148 "Lexer.l"
 { return STAREQ; }
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 148 "Lexer.l"
+#line 149 "Lexer.l"
 { return '/'; }
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-#line 149 "Lexer.l"
+#line 150 "Lexer.l"
 { return SLASHEQ; }
 	YY_BREAK
 case 97:
 YY_RULE_SETUP
-#line 150 "Lexer.l"
+#line 151 "Lexer.l"
 { return '^'; }
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 151 "Lexer.l"
+#line 152 "Lexer.l"
 { return CARETEQ; }
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-#line 152 "Lexer.l"
+#line 153 "Lexer.l"
 { return '%'; }
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
-#line 153 "Lexer.l"
+#line 154 "Lexer.l"
 { return PERCENTEQ; }
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
@@ -1567,15 +1568,15 @@ case YY_STATE_EOF(doc_line):
 case YY_STATE_EOF(blockcomment):
 case YY_STATE_EOF(doc_block):
 case YY_STATE_EOF(suffix):
-#line 154 "Lexer.l"
+#line 155 "Lexer.l"
 { return 0; }
 	YY_BREAK
 case 101:
 YY_RULE_SETUP
-#line 156 "Lexer.l"
+#line 157 "Lexer.l"
 ECHO;
 	YY_BREAK
-#line 1579 "Lexer.flex.cpp"
+#line 1580 "Lexer.flex.cpp"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2624,7 +2625,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 155 "Lexer.l"
+#line 156 "Lexer.l"
 
 
 

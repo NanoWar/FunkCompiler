@@ -15,6 +15,12 @@ void write (const char* format, ...) {
 	va_end (args);
 }
 
+void FunctionDeclNode::Compile()
+{
+	//*output_file << "fn_" << this->GetIdentifier();
+}
+
+
 int compile (Node *n)
 {
 	return 0;

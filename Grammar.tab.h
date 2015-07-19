@@ -57,23 +57,23 @@ extern int yydebug;
      SHLEQ = 266,
      SHREQ = 267,
      MINUSEQ = 268,
-     MINUSMINUS = 269,
-     ANDEQ = 270,
-     OREQ = 271,
-     PLUSEQ = 272,
-     PLUSPLUS = 273,
-     STAREQ = 274,
-     SLASHEQ = 275,
-     CARETEQ = 276,
-     PERCENTEQ = 277,
+     ANDEQ = 269,
+     OREQ = 270,
+     PLUSEQ = 271,
+     STAREQ = 272,
+     SLASHEQ = 273,
+     CARETEQ = 274,
+     PERCENTEQ = 275,
+     MINUSMINUS = 276,
+     PLUSPLUS = 277,
      DOTDOT = 278,
      DOTDOTDOT = 279,
      MOD_SEP = 280,
      RARROW = 281,
      FAT_ARROW = 282,
-     LIT_CHARS = 283,
-     LIT_INTEGER = 284,
-     LIT_STR = 285,
+     TINTEGER = 283,
+     TCHARS = 284,
+     TSTRING = 285,
      NAME = 286,
      LET = 287,
      IF = 288,
@@ -99,7 +99,24 @@ extern int yydebug;
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+typedef union YYSTYPE
+{
+/* Line 2058 of yacc.c  */
+#line 17 "Grammar.y"
+
+ int token;
+ string *name;
+ StatementsNode *stmts;
+ StatementNode *stmt;
+ ParametersNode *params;
+ ParameterNode *param;
+ FunctionDeclNode *fn;
+ ModuleNode *mod;
+
+
+/* Line 2058 of yacc.c  */
+#line 119 "Grammar.tab.h"
+} YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

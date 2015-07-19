@@ -36,9 +36,6 @@
     <ClCompile Include="Lexer.flex.cpp">
       <Filter>Generierte Dateien</Filter>
     </ClCompile>
-    <ClCompile Include="StringMap.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="StringHelper.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>

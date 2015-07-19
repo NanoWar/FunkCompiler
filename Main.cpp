@@ -2,15 +2,12 @@
 #include "AST.h"
 #include "Parser.h"
 #include "Console.h"
+#include <typeinfo>
 
 extern int compile(Node *n);
-extern void export_data();
 
-extern Node *nodes;
-extern int n_nodes;
+StatementsNode *Program;
 
-extern unordered_map<Node *, const char*> nodes_map;
-extern unordered_map<string, Node *> identifier_map;
 char *tmp_file;
 
 int verbose = 0;
@@ -79,10 +76,10 @@ int main(int argc, char **argv)
 	if(argc == 1) {
 		// Display usage
 		cout << endl << "Usage:" << endl;
-		cout << "  -v          " << "Verbose mode(shows additional output)" << endl;
-		cout << "  -q          " << "Quiet mode(supresses all console output)" << endl;
-		cout << "  -d          " << "Debug mode(shows debug messages)" << endl;
-		cout << "  -t          " << "Tree(shows parse tree)" << endl;
+		cout << "  -v          " << "Verbose mode (shows additional output)" << endl;
+		cout << "  -q          " << "Quiet mode (supresses all console output)" << endl;
+		cout << "  -d          " << "Debug mode (shows debug messages)" << endl;
+		cout << "  -t          " << "Tree (shows parse tree)" << endl;
 		cout << "  -x <string> " << "Execute string" << endl;
 		cout << "  -i <file>   " << "Input file" << endl;
 		cout << "  -o <file>   " << "Output file" << endl;
@@ -100,31 +97,29 @@ int main(int argc, char **argv)
 
 
 	// Parse
-	int ret = 0;
-	ret = yyparse();
-	info("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
-	if(tree && nodes) {
-		print("Tree:\n");
-		print_node(nodes, 0);
-	}
+	int yyparse_ret = yyparse();
+	info("--- PARSE COMPLETE: ret:%d ---\n", yyparse_ret);
+
+	
+	auto mod_funk = (ModuleNode*)(Program->Children[0]);
+	auto fn_main = (FunctionDeclNode*)(mod_funk->Statements->Children[0]);
+	auto p = fn_main->Parameters->Children[0];
+	auto p_id = p->GetIdentifier();
+
+	auto mod_test = (ModuleNode*)(mod_funk->Statements->Children[1]);
+	auto fn_foo = (FunctionDeclNode*)(mod_test->Statements->Children[0]);
+	auto fn_foo_id = fn_foo->GetIdentifier();
+
+
+	auto stmt_main = mod_funk->Statements->Children[0];
+	//auto t = typeid(stmt_main);
 
 	// Compile
-	compile(nodes);
+	Program->Compile();
+	//compile(Program);
 
 	// Safety flush
 	fflush(output_file);
-
-	// Clean up names
-	info("Found %d nodes:\n", nodes_map.size());
-	for(auto map = nodes_map.begin(); map != nodes_map.end(); ++map) {
-		info("  %p -> %s\n", map->first, map->second);
-		delete map->second;
-	}
-	info("Found %d identifiers:\n", identifier_map.size());
-	for(auto map = identifier_map.begin(); map != identifier_map.end(); ++map) {
-		info("  %s -> %p \n", map->first.c_str(), map->second);
-		//delete &(map->first);
-	}
 
 	// Clean up files
 	fclose(yyin);
@@ -137,7 +132,7 @@ int main(int argc, char **argv)
 	if(errors) print("There where errors\n");
 	else print("Success!\n");
 
-	return ret;
+	return yyparse_ret;
 }
 
 void yyerror(char const *s) {
