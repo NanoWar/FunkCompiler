@@ -20,7 +20,7 @@ public:
 	Node() : Parent(NULL) { Name = ""; }
 
 	string GetIdentifier();
-	virtual void Compile();
+	virtual void Compile() { }
 };
 
 template<typename ItemType, typename BaseType = Node>
@@ -96,7 +96,7 @@ public:
 		return(OwnType *) this;
 	}
 
-	void Compile()
+	void ContainerNode::Compile()
 	{
 		for(auto child = Children.begin(); child != Children.end(); ++child) {
 			(*child)->Compile();
@@ -146,6 +146,9 @@ public:
 		Name = *name;
 		statements->Parent = this;
 	}
+
+	void Compile();
+
 	~ModuleNode()
 	{
 		delete Statements;

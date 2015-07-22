@@ -17,9 +17,14 @@ void write (const char* format, ...) {
 
 void FunctionDeclNode::Compile()
 {
-	//*output_file << "fn_" << this->GetIdentifier();
+	write("fn_%s\n", this->GetIdentifier());
 }
 
+void ModuleNode::Compile()
+{
+	write("mod_%s\n", this->GetIdentifier());
+	this->Statements->Compile();
+}
 
 int compile (Node *n)
 {
