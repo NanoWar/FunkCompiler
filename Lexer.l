@@ -3,6 +3,7 @@
 using namespace std;
 #define YY_DECL extern "C" int yylex()
 #include "AST.h"
+#include "Register.h"
 #include "Grammar.tab.h"
 %}
 
@@ -70,6 +71,28 @@ bool		{ return BOOL; }
 reg			{ return REG8; }
 reg8		{ return REG8; }
 reg16		{ return REG16; }
+
+ /* Registers */
+a			{ return REG_A; }
+f			{ return REG_F; }
+b			{ return REG_B; }
+c			{ return REG_C; }
+d			{ return REG_D; }
+e			{ return REG_E; }
+h			{ return REG_H; }
+l			{ return REG_L; }
+ixh			{ return REG_IXH; }
+ixl			{ return REG_IXL; }
+i			{ return REG_I; }
+r			{ return REG_R; }
+iyh			{ return REG_IYH; }
+iyl			{ return REG_IYL; }
+af			{ return REG_AF; }
+bc			{ return REG_BC; }
+de			{ return REG_DE; }
+hl			{ return REG_HL; }
+ix			{ return REG_IX; }
+iy			{ return REG_IY; }
 
 {name}		{ return NAME; }
 

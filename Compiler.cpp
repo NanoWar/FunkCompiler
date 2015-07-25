@@ -15,15 +15,34 @@ void write (const char* format, ...) {
 	va_end (args);
 }
 
+int ObjectCounter = 0;
+int NextObjectCounter() { return ObjectCounter++; }
+
 void FunctionDeclNode::Compile()
 {
-	write("fn_%s\n", this->GetIdentifier());
+	//write("\n;------------------------------\n; Function: %s\n;------------------------------\n", this->Name.c_str());
+	write("%s\n", this->GetIdentifier().c_str());
+	if(this->Parameters->HasChildren()) {
+		write(";Inputs:\n");
+		this->Parameters->Compile();
+	}
+	this->Statements->Compile();
+}
+
+void ParameterNode::Compile()
+{
+	write(";  reg = %s\n", this->Name.c_str());
 }
 
 void ModuleNode::Compile()
 {
-	write("mod_%s\n", this->GetIdentifier());
+	write("\n;==============================\n; Module: %s\n;==============================\n\n", this->GetIdentifier().c_str());
 	this->Statements->Compile();
+}
+
+void AssignNode::Compile()
+{
+	write("\n\tld\t%s, ", this->TargetRegister.c_str());
 }
 
 int compile (Node *n)

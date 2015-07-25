@@ -3,6 +3,8 @@
 
 #include "Global.h"
 #include "StringHelper.h"
+#include "Register.h"
+#include "Parser.h"
 #include <typeinfo>
 
 class Node;
@@ -60,6 +62,8 @@ public:
 
 	ContainerNode() {}
 	ContainerNode(ItemType *item) { Extend(item); }
+
+	bool HasChildren() { return Children.size() > 0; }
 
 	ItemType *operator[](const int index)
 	{
@@ -130,9 +134,43 @@ public:
 class StatementNode : public Node
 {
 public:
+	StatementNode()
+	{
+		SourceLine == yylineno;
+	}
 };
 
 class StatementsNode : public ContainerNode<StatementsNode, StatementNode>
+{
+public:
+};
+
+class AssignNode : public StatementNode
+{
+public:
+	string TargetRegister;
+	string Source;
+
+	// TODO: source should be expression
+	AssignNode(ERegister8 target_register, ERegister8 source)
+	{
+		TargetRegister = "a";
+	}
+
+	AssignNode(ERegister16 target_register, ERegister16 source)
+	{
+		TargetRegister = "hl";
+	}
+
+	void Compile();
+};
+
+class ExpressionNode : public Node
+{
+public:
+};
+
+class ExpressionsNode : public ContainerNode<ExpressionsNode, ExpressionNode>
 {
 public:
 };
@@ -159,6 +197,7 @@ class ParameterNode : public Node
 {
 public:
 	ParameterNode(string *name) { Name = *name; }
+	void Compile();
 };
 
 class ParametersNode : public ContainerNode<ParametersNode, ParameterNode>

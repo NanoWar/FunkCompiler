@@ -93,7 +93,27 @@ extern int yydebug;
      WORD = 302,
      BOOL = 303,
      REG8 = 304,
-     REG16 = 305
+     REG16 = 305,
+     REG_A = 306,
+     REG_F = 307,
+     REG_B = 308,
+     REG_C = 309,
+     REG_D = 310,
+     REG_E = 311,
+     REG_H = 312,
+     REG_L = 313,
+     REG_IXH = 314,
+     REG_IXL = 315,
+     REG_I = 316,
+     REG_R = 317,
+     REG_IYH = 318,
+     REG_IYL = 319,
+     REG_AF = 320,
+     REG_BC = 321,
+     REG_DE = 322,
+     REG_HL = 323,
+     REG_IX = 324,
+     REG_IY = 325
    };
 #endif
 
@@ -102,8 +122,9 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 2058 of yacc.c  */
-#line 17 "Grammar.y"
+#line 18 "Grammar.y"
 
+ void *unknown;
  int token;
  string *name;
  StatementsNode *stmts;
@@ -112,10 +133,12 @@ typedef union YYSTYPE
  ParameterNode *param;
  FunctionDeclNode *fn;
  ModuleNode *mod;
+ ERegister8 reg8;
+ ERegister16 reg16;
 
 
 /* Line 2058 of yacc.c  */
-#line 119 "Grammar.tab.h"
+#line 142 "Grammar.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
