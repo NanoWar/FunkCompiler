@@ -5,7 +5,7 @@
 
 void info (const char* format, ...);
 void print (const char* format, ...);
-void print_node(Node *n, int depth);
+//void print_node(Node *n, int depth);
 
 
 void AddConsoleCtrlHandler ();

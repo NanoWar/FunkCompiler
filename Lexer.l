@@ -2,6 +2,8 @@
 #include <iostream>
 using namespace std;
 #define YY_DECL extern "C" int yylex()
+#include "AST.h"
+#include "Register.h"
 #include "Grammar.tab.h"
 %}
 
@@ -70,12 +72,35 @@ reg			{ return REG8; }
 reg8		{ return REG8; }
 reg16		{ return REG16; }
 
+ /* Registers */
+a			{ return REG_A; }
+f			{ return REG_F; }
+b			{ return REG_B; }
+c			{ return REG_C; }
+d			{ return REG_D; }
+e			{ return REG_E; }
+h			{ return REG_H; }
+l			{ return REG_L; }
+ixh			{ return REG_IXH; }
+ixl			{ return REG_IXL; }
+i			{ return REG_I; }
+r			{ return REG_R; }
+iyh			{ return REG_IYH; }
+iyl			{ return REG_IYL; }
+af			{ return REG_AF; }
+bc			{ return REG_BC; }
+de			{ return REG_DE; }
+hl			{ return REG_HL; }
+ix			{ return REG_IX; }
+iy			{ return REG_IY; }
+af'			{ return REG_AFS; }
+
 {name}		{ return NAME; }
 
-0x[0-9a-fA-F_]+	{ BEGIN(suffix); return LIT_INTEGER; }
-0o[0-8_]+		{ BEGIN(suffix); return LIT_INTEGER; }
-0b[01_]+		{ BEGIN(suffix); return LIT_INTEGER; }
-[0-9][0-9_]*	{ BEGIN(suffix); return LIT_INTEGER; }
+0x[0-9a-fA-F_]+	{ BEGIN(suffix); return TINTEGER; }
+0o[0-8_]+		{ BEGIN(suffix); return TINTEGER; }
+0b[01_]+		{ BEGIN(suffix); return TINTEGER; }
+[0-9][0-9_]*	{ BEGIN(suffix); return TINTEGER; }
 
 ;		{ return ';'; }
 ,		{ return ','; }
@@ -112,7 +137,7 @@ reg16		{ return REG16; }
 
  /* CHARS */
 \x27								{ BEGIN(ltorchar); yymore(); }
-<ltorchar>\x27						{ BEGIN(suffix); return LIT_CHARS; }
+<ltorchar>\x27						{ BEGIN(suffix); return TCHARS; }
 <ltorchar><<EOF>>					{ return -1; }
 <ltorchar>\\[n\nrt\\\x27\x220]		{ yymore(); }
 <ltorchar>\\x[0-9a-fA-F]{2}			{ yymore(); }
@@ -122,7 +147,7 @@ reg16		{ return REG16; }
 
  /* STRING */
 \x22							{ BEGIN(str); yymore(); }
-<str>\x22						{ BEGIN(suffix); return LIT_STR; }
+<str>\x22						{ BEGIN(suffix); return TSTRING; }
 <str><<EOF>>					{ return -1; }
 <str>\\[n\nrt\\\x27\x220]		{ yymore(); }
 <str>\\x[0-9a-fA-F]{2}			{ yymore(); }

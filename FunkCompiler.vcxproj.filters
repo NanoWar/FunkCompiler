@@ -27,9 +27,6 @@
     <ClCompile Include="Compiler.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="AST.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="Console.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -39,10 +36,10 @@
     <ClCompile Include="Lexer.flex.cpp">
       <Filter>Generierte Dateien</Filter>
     </ClCompile>
-    <ClCompile Include="StringMap.cpp">
+    <ClCompile Include="StringHelper.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="StringHelper.cpp">
+    <ClCompile Include="Identifier.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

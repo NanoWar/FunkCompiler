@@ -57,23 +57,23 @@ extern int yydebug;
      SHLEQ = 266,
      SHREQ = 267,
      MINUSEQ = 268,
-     MINUSMINUS = 269,
-     ANDEQ = 270,
-     OREQ = 271,
-     PLUSEQ = 272,
-     PLUSPLUS = 273,
-     STAREQ = 274,
-     SLASHEQ = 275,
-     CARETEQ = 276,
-     PERCENTEQ = 277,
+     ANDEQ = 269,
+     OREQ = 270,
+     PLUSEQ = 271,
+     STAREQ = 272,
+     SLASHEQ = 273,
+     CARETEQ = 274,
+     PERCENTEQ = 275,
+     MINUSMINUS = 276,
+     PLUSPLUS = 277,
      DOTDOT = 278,
      DOTDOTDOT = 279,
      MOD_SEP = 280,
      RARROW = 281,
      FAT_ARROW = 282,
-     LIT_CHARS = 283,
-     LIT_INTEGER = 284,
-     LIT_STR = 285,
+     TINTEGER = 283,
+     TCHARS = 284,
+     TSTRING = 285,
      NAME = 286,
      LET = 287,
      IF = 288,
@@ -93,13 +93,54 @@ extern int yydebug;
      WORD = 302,
      BOOL = 303,
      REG8 = 304,
-     REG16 = 305
+     REG16 = 305,
+     REG_A = 306,
+     REG_F = 307,
+     REG_B = 308,
+     REG_C = 309,
+     REG_D = 310,
+     REG_E = 311,
+     REG_H = 312,
+     REG_L = 313,
+     REG_IXH = 314,
+     REG_IXL = 315,
+     REG_IYH = 316,
+     REG_IYL = 317,
+     REG_I = 318,
+     REG_R = 319,
+     REG_AF = 320,
+     REG_BC = 321,
+     REG_DE = 322,
+     REG_HL = 323,
+     REG_IX = 324,
+     REG_IY = 325,
+     REG_AFS = 326
    };
 #endif
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+typedef union YYSTYPE
+{
+/* Line 2058 of yacc.c  */
+#line 18 "Grammar.y"
+
+ void *unknown;
+ int token;
+ string *str;
+ StatementsNode *stmts;
+ StatementNode *stmt;
+ ExpressionNode *expr;
+ ParametersNode *params;
+ ParameterNode *param;
+ FunctionDeclNode *fn;
+ ModuleNode *mod;
+ ERegister reg;
+
+
+/* Line 2058 of yacc.c  */
+#line 143 "Grammar.tab.h"
+} YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

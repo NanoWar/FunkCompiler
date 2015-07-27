@@ -1,23 +1,27 @@
 #include "Global.h"
+
 #include "AST.h"
+#include "StringHelper.h"
 
-map<NodeBase*, string> NodeIdentifiers = map<NodeBase*, string>();
-map<string, NodeBase*> IdentifiableNodes = map<string, NodeBase*>();
+map<Node*, string> NodeToString = map<Node*, string>();
+map<string, Node*> StringToNode = map<string, Node*>();
 
-string NodeBase::GetIdentifier() {
-	auto id = NodeIdentifiers[this];
+string Node::GetIdentifier()
+{
+	auto id = NodeToString[this];
 	if(!id.empty()) return id;
 
 	vector<string> names;
 	names.push_back(Name);
-	NodeBase *parent = Parent;
-	while(parent && parent->Parent) {
-		// Jump over unnamed container nodes
+	Node *parent = Parent;
+	while(parent) {
+		// Jump over unnamed container Nodes
 		if(!parent->Name.empty()) names.push_back(parent->Name);
 		parent = parent->Parent;
 	}
 	reverse(names.begin(), names.end());
 	auto result = join(names, ".");
-	NodeIdentifiers[this] = result;
+	NodeToString[this] = result;
+	StringToNode[result] = this; // ?
 	return result;
 }

@@ -1,82 +1,53 @@
 #ifndef AST_h
 #define AST_h
 
-class Node
-{
-public:
-	// Value
-	bool own_string;
-	char const *type;
-
-	// Navigation
-	Node *next;
-	Node *prev;
-	Node *parent;
-
-	// Real value
-	bool is_proxy;
-	const char *proxy;
-	const char *format;
-	bool has_value;
-	int value;
-
-	// Children
-	int n_elems;
-	Node *elems[];
-};
-
+#include "Global.h"
 #include "StringHelper.h"
+#include "Register.h"
+#include "Parser.h"
+#include "Console.h"
 #include <typeinfo>
-#include <map>
 
-class NodeBase;
-class ProgramNode;
+class Node;
 
-extern map<NodeBase*, string> NodeIdentifiers;
-extern map<string, NodeBase*> IdentifiableNodes;
+extern map<Node*, string> NodeToString;
+extern map<string, Node*> StringToNode;
 
-class NodeBase
+class Node
 {
 public:
 	string Name;
 	int SourceLine;
-	NodeBase *Parent;
+	Node *Parent;
 
-	NodeBase() : Parent(NULL) { Name = ""; }
+	Node() : Parent(NULL) { Name = ""; }
 
 	string GetIdentifier();
+	virtual void Compile() { }
 };
 
-template<typename OwnType, typename ItemType, typename BaseType = NodeBase>
-class ContainerNode : public BaseType
+template<typename ItemType, typename BaseType = Node>
+class ListNode : public BaseType
 {
 public:
-	vector<ItemType*> Children;
+	vector<ItemType *> Children;
 
-	ContainerNode() {}
-	ContainerNode(ItemType *item) { Children.push_back(item); }
+	ListNode() {}
+	ListNode(ItemType *item) { Extend(item); }
 
-	OwnType *Extend(ItemType *node)
+	ItemType *operator[](const int index)
+	{
+		return Children[index];
+	}
+
+	virtual ListNode *Extend(ItemType *node)
 	{
 		Children.push_back(node);
-		((NodeBase *) node)->Parent = this;
-		return(OwnType *) this;
+		return this;
 	}
 
-	OwnType *Extend(int n, ...)
+	~ListNode()
 	{
-		va_list params;
-		va_start(params, n);
-		for(int i = 0; i < n; i++) {
-			auto node = va_arg(params, ItemType *);
-			Children.push_back(node);
-			((NodeBase *) node)->Parent = this;
-		}
-		va_end(params);
-		return(OwnType *) this;
-	}
-
-	~ContainerNode() {
 		for(auto child = Children.begin(); child != Children.end(); ++child) {
 			delete *child;
 		}
@@ -84,45 +55,273 @@ public:
 
 };
 
-class NameNode : public NodeBase
+template<typename OwnType, typename ItemType, typename BaseType = Node>
+class ContainerNode : public BaseType
 {
 public:
-	NameNode(string name) { Name = name; }
+	vector<ItemType *> Children;
+
+	ContainerNode() {}
+	ContainerNode(ItemType *item) { Extend(item); }
+
+	bool HasChildren() { return Children.size() > 0; }
+
+	ItemType *operator[](const int index)
+	{
+		return Children[index];
+	}
+
+	OwnType *Extend(ItemType *node)
+	{
+		Children.push_back(node);
+		((Node *) node)->Parent = this;
+		return(OwnType *) this;
+	}
+
+	OwnType *Extend(int n, ...)
+	{
+		va_list params;
+		va_start(params, n);
+		Children.reserve(Children.size() + n);
+		for(int i = 0; i < n; i++) {
+			auto node = va_arg(params, ItemType *);
+			Extend(node);
+		}
+		va_end(params);
+		return(OwnType *) this;
+	}
+
+	OwnType *Extend(vector<ItemType*> nodes)
+	{
+		Children.reserve(Children.size() + nodes.size());
+		for(int i = 0; i < nodes.size(); i++) {
+			auto node = nodes[i];
+			Extend(node);
+		}
+		return(OwnType *) this;
+	}
+
+	void ContainerNode::Compile()
+	{
+		for(auto child = Children.begin(); child != Children.end(); ++child) {
+			(*child)->Compile();
+		}
+	}
+
+	~ContainerNode()
+	{
+		for(auto child = Children.begin(); child != Children.end(); ++child) {
+			delete *child;
+		}
+	}
+
 };
 
-class FieldsNode : public ContainerNode<FieldsNode, NameNode>
+class StatementNode : public Node
 {
 public:
-	FieldsNode(NameNode *nameNode) : ContainerNode(nameNode) {}
+	StatementNode()
+	{
+		SourceLine = yylineno;
+	}
 };
 
-class IdentNode : public NodeBase
-{
-public:
-	FieldsNode *Fields;
-	IdentNode(NameNode *nameNode, FieldsNode *fieldsNode) : Fields(fieldsNode) { Name = nameNode->Name; }
-};
-
-class ItemNode : public NodeBase
+class StatementsNode : public ContainerNode<StatementsNode, StatementNode>
 {
 public:
 };
 
-class ProgramNode : public ContainerNode<ProgramNode, ItemNode>
+class ExpressionNode : public Node
 {
 public:
+	string Target;
+
+	bool HasTargetRegister;
+	ERegister TargetRegister;
+
+	bool HasStaticValue;
+	int Value;
+
+	int Size;
+	
+	ExpressionNode()
+	{
+		HasTargetRegister = false;
+		HasStaticValue = false;
+	}
+	
+	bool IsValid()
+	{
+		if(TargetRegister < REGISTER_BIG && Size == 1) return true;
+		if(TargetRegister >= REGISTER_BIG && Size == 2) return true;
+		return false;
+	}
+
+	virtual void Compile() { }
 };
 
-class ModuleNode : public ContainerNode<ModuleNode, ItemNode, ItemNode>
+class IdentExpr : public ExpressionNode
 {
 public:
-	ModuleNode(NameNode *nameNode) { Name = nameNode->Name; }
+	string Ident;
+	IdentExpr(string ident)
+	{
+		Ident = ident;
+		Size = 2;
+	}
+	void Compile();
 };
 
-class ParameterNode : public NodeBase
+class NumberExpr : public ExpressionNode
 {
 public:
-	ParameterNode(NameNode *nameNode) { Name = nameNode->Name; }
+	NumberExpr(string str)
+	{
+		Target = str;
+		HasStaticValue = true;
+		int number = stoi(str);
+		Value = number;
+		if(number > 256 || number < -127)
+			Size = 2;
+		else
+			Size = 1;
+	}
+};
+
+class CharsExpr : public ExpressionNode
+{
+public:
+	CharsExpr(string chars)
+	{
+		Size = chars.length();
+		Target = chars;
+		HasStaticValue = true;
+
+		if(Size == 1)
+			Value = chars[0];
+		else
+			Value = chars[1] * 256 + chars[0];
+	}
+};
+
+class StringExpr : public IdentExpr
+{
+public:
+	StringExpr(string str) : IdentExpr("str_xxx")
+	{
+		// TODO: Register string
+		Size = 2;
+	}
+};
+
+class PlusExpr : public ExpressionNode
+{
+public:
+	ExpressionNode *Lhs;
+	ExpressionNode *Rhs;
+
+	PlusExpr(ExpressionNode *lhs, ExpressionNode *rhs)
+		: Lhs(lhs), Rhs(rhs)
+	{
+		Size = max(lhs->Size, rhs->Size);
+		lhs->Parent = this;
+		lhs->Parent = this;
+	}
+
+	~PlusExpr()
+	{
+		delete Lhs;
+		delete Rhs;
+	}
+
+	void Compile();
+};
+
+class IndirectionExpr : public ExpressionNode
+{
+public:
+	ExpressionNode *Expr;
+
+	IndirectionExpr(ExpressionNode *expr) : Expr(expr)
+	{
+		expr->Parent = this;
+	}
+
+	~IndirectionExpr()
+	{
+		delete Expr;
+	}
+
+	void Compile();
+};
+
+
+class RegisterExpr : public ExpressionNode
+{
+public:
+	RegisterExpr(ERegister reg)
+	{
+		HasTargetRegister = true;
+		TargetRegister = reg;
+		Target = RegisterStringMap[reg];
+	}
+};
+
+class AssignStmt : public StatementNode
+{
+public:
+	string Target;
+	ERegister TargetRegister;
+	ExpressionNode *Expr;
+
+	AssignStmt(ERegister target, ExpressionNode *expr) : Expr(expr)
+	{
+		expr->Parent = this;
+		TargetRegister = target;
+		Target = RegisterStringMap[target];
+	}
+
+	AssignStmt(string *target, ExpressionNode *expr) : Expr(expr)
+	{
+		expr->Parent = this;
+		// TODO: Resolve register
+		TargetRegister = ERegister::HL;
+		Target = *target;
+	}
+
+	~AssignStmt()
+	{
+		delete Expr;
+	}
+
+	void Compile();
+};
+
+
+class ModuleNode : public StatementNode
+{
+public:
+	StatementsNode *Statements;
+
+	ModuleNode(string *name, StatementsNode *statements) : Statements(statements), StatementNode()
+	{
+		Name = *name;
+		statements->Parent = this;
+	}
+
+	~ModuleNode()
+	{
+		delete Statements;
+	}
+	
+	void Compile();
+};
+
+class ParameterNode : public Node
+{
+public:
+	ParameterNode(string *name) { Name = *name; }
+	void Compile();
 };
 
 class ParametersNode : public ContainerNode<ParametersNode, ParameterNode>
@@ -130,22 +329,36 @@ class ParametersNode : public ContainerNode<ParametersNode, ParameterNode>
 public:
 };
 
-class OutputNode : public NodeBase
+class OutputNode : public Node
 {
 public:
 };
 
-class FunctionNode : public ContainerNode<ProgramNode, ItemNode, ItemNode>
+class OutputsNode : public ContainerNode<OutputsNode, OutputNode>
+{
+public:
+};
+
+class FunctionDeclNode : public StatementNode
 {
 public:
 	ParametersNode *Parameters;
+	StatementsNode *Statements;
 
-	FunctionNode(NameNode *nameNode, ParametersNode *parameters) : Parameters(parameters) {
-		Name = nameNode->Name; 
+	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements)
+		: Parameters(parameters), Statements(statements), StatementNode()
+	{
+		Name = *name;
 		parameters->Parent = this;
+		statements->Parent = this;
 	}
-	~FunctionNode() {
+
+	void Compile();
+
+	~FunctionDeclNode()
+	{
 		delete Parameters;
+		delete Statements;
 	}
 };
 
