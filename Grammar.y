@@ -18,26 +18,26 @@ extern StatementsNode *Program;
 %union {
  void *unknown;
  int token;
- string *name;
+ string *str;
  StatementsNode *stmts;
  StatementNode *stmt;
+ ExpressionNode *expr;
  ParametersNode *params;
  ParameterNode *param;
  FunctionDeclNode *fn;
  ModuleNode *mod;
- ERegister8 reg8;
- ERegister16 reg16;
+ ERegister reg;
 }
 
 %debug
 
 %type <stmts> stmts program
 %type <stmt> stmt fn mod assign
+%type <expr> expr
 %type <params> params
 %type <param> param
-%type <name> name
-%type <reg8> reg8
-%type <reg16> reg16
+%type <str> name
+%type <reg> reg
 
 
 %token <token> SHL SHR
@@ -49,8 +49,8 @@ extern StatementsNode *Program;
 %token <token> DOTDOT DOTDOTDOT MOD_SEP
 %token <token> RARROW FAT_ARROW
 
-%token <name> TINTEGER
-%token <name> TCHARS TSTRING NAME
+%token <str> TINTEGER
+%token <str> TCHARS TSTRING NAME
 
 // Keywords
 %token <token> LET IF ELIF ELSE MATCH LOOP END RETURN
@@ -60,8 +60,8 @@ extern StatementsNode *Program;
 // Types
 %token <token> BYTE WORD BOOL REG8 REG16
 
-%token <reg8> REG_A REG_F REG_B REG_C REG_D REG_E REG_H REG_L REG_IXH REG_IXL REG_I REG_R REG_IYH REG_IYL
-%token <reg16> REG_AF REG_BC REG_DE REG_HL REG_IX REG_IY
+%token <reg> REG_A REG_F REG_B REG_C REG_D REG_E REG_H REG_L REG_IXH REG_IXL REG_IYH REG_IYL REG_I REG_R
+%token <reg> REG_AF REG_BC REG_DE REG_HL REG_IX REG_IY REG_AFS
 
 //%right '='
 %left  '+' '-'
@@ -97,7 +97,7 @@ stmt
 ;
 
 fn
-: FN name '(' params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<name>2, $<params>4, $<stmts>7); delete $2;}
+: FN name '(' params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<params>4, $<stmts>7); delete $2;}
 ;
 params
 : /* empty */			{ $$ = new ParametersNode(); }
@@ -105,16 +105,16 @@ params
 | params ',' param		{ $$ = $<params>1->Extend($<param>3); }
 ;
 param
-: name					{ $$ = new ParameterNode($<name>1); delete $1; }
+: name					{ $$ = new ParameterNode($<str>1); delete $1; }
 ;
 
 mod
-: MOD name '{' stmts '}'	{ $$ = new ModuleNode($<name>2, $<stmts>4); delete $2; }
+: MOD name '{' stmts '}'	{ $$ = new ModuleNode($<str>2, $<stmts>4); delete $2; }
 ;
 
 assign
-: reg8 '=' reg8				{ $$ = new AssignNode($<reg8>1, $<reg8>3); }
-| reg16 '=' reg16			{ $$ = new AssignNode($<reg16>1, $<reg16>3); }
+: reg '=' expr				{ $$ = new AssignStmt($<reg>1, $<expr>3); }
+| name '=' expr				{ $$ = new AssignStmt($<str>1, $<expr>3); }
 ;
 
 
@@ -124,8 +124,25 @@ assign
 // EXPRESSIONS
 ////////////////////////////////////////////////////////////////////////
 
-
-
+expr
+: name						{ $$ = new IdentExpr(*$<str>1); delete $1; }
+| TINTEGER					{ $$ = new NumberExpr(string(yytext)); }
+| TCHARS					{ $$ = new CharsExpr(string(yytext)); }
+| TSTRING					{ $$ = new StringExpr(string(yytext)); }
+| reg						{ $$ = new RegisterExpr($<reg>1); }
+| expr '+' expr				{ $$ = new PlusExpr($<expr>1, $<expr>3); }
+| '*' expr					{ $$ = new IndirectionExpr($<expr>2); }
+/*
+| expr '-' expr				{ $$ = mk_node("Minus", 2, $1, $3); }
+| expr '*' expr				{ $$ = mk_node("Mul", 2, $1, $3); }
+| expr '/' expr				{ $$ = mk_node("Div", 2, $1, $3); }
+| expr EQEQ expr			{ $$ = mk_node("Equals", 2, $1, $3); }
+| expr NE expr				{ $$ = mk_node("Unequals", 2, $1, $3); }
+| expr '>' expr				{ $$ = mk_node("Greater", 2, $1, $3); }
+| expr '<' expr				{ $$ = mk_node("Smaller", 2, $1, $3); }
+*/
+| '(' expr ')'				{ $$ = $<expr>2; }
+;
 
 ////////////////////////////////////////////////////////////////////////
 // IDENTIFIERS
@@ -135,29 +152,27 @@ name
 : NAME					{ $$ = new string(yytext); }
 ;
 
-reg8
-: REG_A { $$ = ERegister8::A; }
-| REG_F { $$ = ERegister8::F; }
-| REG_B { $$ = ERegister8::B; }
-| REG_C { $$ = ERegister8::C; }
-| REG_D { $$ = ERegister8::D; }
-| REG_E { $$ = ERegister8::E; }
-| REG_H { $$ = ERegister8::H; }
-| REG_L { $$ = ERegister8::L; }
-| REG_IXH { $$ = ERegister8::IXH; }
-| REG_IXL { $$ = ERegister8::IXL; }
-| REG_IYH { $$ = ERegister8::IYH; }
-| REG_IYL { $$ = ERegister8::IYL; }
-| REG_I { $$ = ERegister8::I; }
-| REG_R { $$ = ERegister8::R; }
-;
-reg16
-: REG_AF { $$ = ERegister16::AF; }
-| REG_BC { $$ = ERegister16::BC; }
-| REG_DE { $$ = ERegister16::DE; }
-| REG_HL { $$ = ERegister16::HL; }
-| REG_IX { $$ = ERegister16::IX; }
-| REG_IY { $$ = ERegister16::IY; }
+reg
+: REG_A { $$ = ERegister::A; }
+| REG_F { $$ = ERegister::F; }
+| REG_B { $$ = ERegister::B; }
+| REG_C { $$ = ERegister::C; }
+| REG_D { $$ = ERegister::D; }
+| REG_E { $$ = ERegister::E; }
+| REG_H { $$ = ERegister::H; }
+| REG_L { $$ = ERegister::L; }
+| REG_IXH { $$ = ERegister::IXH; }
+| REG_IXL { $$ = ERegister::IXL; }
+| REG_IYH { $$ = ERegister::IYH; }
+| REG_IYL { $$ = ERegister::IYL; }
+| REG_I { $$ = ERegister::I; }
+| REG_R { $$ = ERegister::R; }
+| REG_AF { $$ = ERegister::AF; }
+| REG_BC { $$ = ERegister::BC; }
+| REG_DE { $$ = ERegister::DE; }
+| REG_HL { $$ = ERegister::HL; }
+| REG_IX { $$ = ERegister::IX; }
+| REG_IY { $$ = ERegister::IY; }
 ;
 
 %%

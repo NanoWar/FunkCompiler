@@ -100,23 +100,8 @@ int main(int argc, char **argv)
 	int yyparse_ret = yyparse();
 	info("--- PARSE COMPLETE: ret:%d ---\n", yyparse_ret);
 
-	
-	auto mod_funk = (ModuleNode*)(Program->Children[0]);
-	auto fn_main = (FunctionDeclNode*)(mod_funk->Statements->Children[0]);
-	auto p = fn_main->Parameters->Children[0];
-	auto p_id = p->GetIdentifier();
-
-	auto mod_test = (ModuleNode*)(mod_funk->Statements->Children[1]);
-	auto fn_foo = (FunctionDeclNode*)(mod_test->Statements->Children[0]);
-	auto fn_foo_id = fn_foo->GetIdentifier();
-
-
-	auto stmt_main = mod_funk->Statements->Children[0];
-	//auto t = typeid(stmt_main);
-
 	// Compile
 	Program->Compile();
-	//compile(Program);
 
 	// Safety flush
 	fflush(output_file);

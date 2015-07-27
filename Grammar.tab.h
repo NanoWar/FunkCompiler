@@ -104,16 +104,17 @@ extern int yydebug;
      REG_L = 313,
      REG_IXH = 314,
      REG_IXL = 315,
-     REG_I = 316,
-     REG_R = 317,
-     REG_IYH = 318,
-     REG_IYL = 319,
+     REG_IYH = 316,
+     REG_IYL = 317,
+     REG_I = 318,
+     REG_R = 319,
      REG_AF = 320,
      REG_BC = 321,
      REG_DE = 322,
      REG_HL = 323,
      REG_IX = 324,
-     REG_IY = 325
+     REG_IY = 325,
+     REG_AFS = 326
    };
 #endif
 
@@ -126,19 +127,19 @@ typedef union YYSTYPE
 
  void *unknown;
  int token;
- string *name;
+ string *str;
  StatementsNode *stmts;
  StatementNode *stmt;
+ ExpressionNode *expr;
  ParametersNode *params;
  ParameterNode *param;
  FunctionDeclNode *fn;
  ModuleNode *mod;
- ERegister8 reg8;
- ERegister16 reg16;
+ ERegister reg;
 
 
 /* Line 2058 of yacc.c  */
-#line 142 "Grammar.tab.h"
+#line 143 "Grammar.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

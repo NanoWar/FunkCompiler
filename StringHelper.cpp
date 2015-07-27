@@ -12,6 +12,19 @@ string join(vector<string> strings, string delimiter)
 	return result.str();
 }
 
+string join(string delimiter, int n, ...)
+{
+	va_list args;
+	va_start(args, n);
+	vector<string> s;
+	for(int i = 0; i < n; i++)
+	{
+		s.push_back(va_arg(args, string));
+	}
+	va_end(args);
+	return join(s, delimiter);
+}
+
 const char *join (vector<const char *> strings, const char delimiter)
 {
 	int len = 0;

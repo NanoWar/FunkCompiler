@@ -5,6 +5,7 @@
 #include "StringHelper.h"
 #include "Register.h"
 #include "Parser.h"
+#include "Console.h"
 #include <typeinfo>
 
 class Node;
@@ -116,27 +117,12 @@ public:
 
 };
 
-class IdentNode : Node
-{
-public:
-	vector<string *> *Fields;
-	IdentNode(string *name, vector<string *> *fields) : Fields(fields)
-	{
-		Name = *name;
-	}
-
-	~IdentNode()
-	{
-		delete Fields;
-	}
-};
-
 class StatementNode : public Node
 {
 public:
 	StatementNode()
 	{
-		SourceLine == yylineno;
+		SourceLine = yylineno;
 	}
 };
 
@@ -145,52 +131,190 @@ class StatementsNode : public ContainerNode<StatementsNode, StatementNode>
 public:
 };
 
-class AssignNode : public StatementNode
+class ExpressionNode : public Node
 {
 public:
-	string TargetRegister;
-	string Source;
+	string Target;
 
-	// TODO: source should be expression
-	AssignNode(ERegister8 target_register, ERegister8 source)
+	bool HasTargetRegister;
+	ERegister TargetRegister;
+
+	bool HasStaticValue;
+	int Value;
+
+	int Size;
+	
+	ExpressionNode()
 	{
-		TargetRegister = "a";
+		HasTargetRegister = false;
+		HasStaticValue = false;
+	}
+	
+	bool IsValid()
+	{
+		if(TargetRegister < REGISTER_BIG && Size == 1) return true;
+		if(TargetRegister >= REGISTER_BIG && Size == 2) return true;
+		return false;
 	}
 
-	AssignNode(ERegister16 target_register, ERegister16 source)
+	virtual void Compile() { }
+};
+
+class IdentExpr : public ExpressionNode
+{
+public:
+	string Ident;
+	IdentExpr(string ident)
 	{
-		TargetRegister = "hl";
+		Ident = ident;
+		Size = 2;
+	}
+	void Compile();
+};
+
+class NumberExpr : public ExpressionNode
+{
+public:
+	NumberExpr(string str)
+	{
+		Target = str;
+		HasStaticValue = true;
+		int number = stoi(str);
+		Value = number;
+		if(number > 256 || number < -127)
+			Size = 2;
+		else
+			Size = 1;
+	}
+};
+
+class CharsExpr : public ExpressionNode
+{
+public:
+	CharsExpr(string chars)
+	{
+		Size = chars.length();
+		Target = chars;
+		HasStaticValue = true;
+
+		if(Size == 1)
+			Value = chars[0];
+		else
+			Value = chars[1] * 256 + chars[0];
+	}
+};
+
+class StringExpr : public IdentExpr
+{
+public:
+	StringExpr(string str) : IdentExpr("str_xxx")
+	{
+		// TODO: Register string
+		Size = 2;
+	}
+};
+
+class PlusExpr : public ExpressionNode
+{
+public:
+	ExpressionNode *Lhs;
+	ExpressionNode *Rhs;
+
+	PlusExpr(ExpressionNode *lhs, ExpressionNode *rhs)
+		: Lhs(lhs), Rhs(rhs)
+	{
+		Size = max(lhs->Size, rhs->Size);
+		lhs->Parent = this;
+		lhs->Parent = this;
+	}
+
+	~PlusExpr()
+	{
+		delete Lhs;
+		delete Rhs;
 	}
 
 	void Compile();
 };
 
-class ExpressionNode : public Node
+class IndirectionExpr : public ExpressionNode
 {
 public:
+	ExpressionNode *Expr;
+
+	IndirectionExpr(ExpressionNode *expr) : Expr(expr)
+	{
+		expr->Parent = this;
+	}
+
+	~IndirectionExpr()
+	{
+		delete Expr;
+	}
+
+	void Compile();
 };
 
-class ExpressionsNode : public ContainerNode<ExpressionsNode, ExpressionNode>
+
+class RegisterExpr : public ExpressionNode
 {
 public:
+	RegisterExpr(ERegister reg)
+	{
+		HasTargetRegister = true;
+		TargetRegister = reg;
+		Target = RegisterStringMap[reg];
+	}
 };
+
+class AssignStmt : public StatementNode
+{
+public:
+	string Target;
+	ERegister TargetRegister;
+	ExpressionNode *Expr;
+
+	AssignStmt(ERegister target, ExpressionNode *expr) : Expr(expr)
+	{
+		expr->Parent = this;
+		TargetRegister = target;
+		Target = RegisterStringMap[target];
+	}
+
+	AssignStmt(string *target, ExpressionNode *expr) : Expr(expr)
+	{
+		expr->Parent = this;
+		// TODO: Resolve register
+		TargetRegister = ERegister::HL;
+		Target = *target;
+	}
+
+	~AssignStmt()
+	{
+		delete Expr;
+	}
+
+	void Compile();
+};
+
 
 class ModuleNode : public StatementNode
 {
 public:
 	StatementsNode *Statements;
-	ModuleNode(string *name, StatementsNode *statements) : Statements(statements)
+
+	ModuleNode(string *name, StatementsNode *statements) : Statements(statements), StatementNode()
 	{
 		Name = *name;
 		statements->Parent = this;
 	}
 
-	void Compile();
-
 	~ModuleNode()
 	{
 		delete Statements;
 	}
+	
+	void Compile();
 };
 
 class ParameterNode : public Node
@@ -220,7 +344,9 @@ class FunctionDeclNode : public StatementNode
 public:
 	ParametersNode *Parameters;
 	StatementsNode *Statements;
-	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements) : Parameters(parameters), Statements(statements)
+
+	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements)
+		: Parameters(parameters), Statements(statements), StatementNode()
 	{
 		Name = *name;
 		parameters->Parent = this;

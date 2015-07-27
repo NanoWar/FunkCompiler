@@ -1,40 +1,22 @@
 #ifndef Register_h
 #define Register_h
 
-enum ERegister16
+enum ERegister
 {
-	AF, BC, DE, HL, IX, IY, IR
+	NONE,
+	A, F, B, C, D, E, H, L, IXH, IXL, IYH, IYL, I, R,
+	AF, BC, DE, HL, IX, IY, IR,
+	AFS,
+	MAX
 };
 
-enum ERegister8
-{
-	A, F, B, C, D, E, H, L, IXH, IXL, IYH, IYL, I, R, MAX
-};
+#define REGISTER_BIG ERegister::AF
+#define SPLIT_REGISTER(reg, index) ((ERegister) ((reg-REGISTER_BIG)*2+index+1))
+#define HI_REG(reg) SPLIT_REGISTER(reg, 0)
+#define LO_REG(reg) SPLIT_REGISTER(reg, 1)
+#define IS_SMALL(reg) (reg > ERegister::NONE && reg < REGISTER_BIG)
+#define IS_BIG(reg) !IS_SMALL(reg)
 
-struct map_icmp { 
-    bool operator() (const std::string& lhs, const std::string& rhs) const {
-        return stricmp(lhs.c_str(), rhs.c_str()) < 0;
-    }
-};
-
-extern bool RegisterUsage[ERegister8::MAX];
-extern map<string, ERegister8, map_icmp> reg8_map;
-extern map<string, ERegister16, map_icmp> reg16_map;
-
-map<string, ERegister8, map_icmp> mk_reg8_map();
-map<string, ERegister16, map_icmp> mk_reg16_map();
-
-
-
-bool IsRegisterUsed(ERegister8 reg8);
-bool IsRegisterUsed(ERegister16 reg16);
-bool UseRegister(ERegister8 reg8);
-bool UseRegister(ERegister16 reg16);
-bool UseRegister(const char *reg);
-void UnUseRegister(ERegister8 reg8);
-void UnUseRegister(ERegister16 reg16);
-void UnUseRegister(const char *reg);
-void UnUseAllRegisters();
-
+extern map<ERegister, string> RegisterStringMap;
 
 #endif Register_h

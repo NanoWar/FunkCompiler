@@ -1,1 +1,4 @@
 Debug/
+Grammar.tab.cpp
+FunkCompiler.vcxproj.user
+Lexer.flex.cpp

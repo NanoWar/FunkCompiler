@@ -93,6 +93,7 @@ de			{ return REG_DE; }
 hl			{ return REG_HL; }
 ix			{ return REG_IX; }
 iy			{ return REG_IY; }
+af'			{ return REG_AFS; }
 
 {name}		{ return NAME; }
 
