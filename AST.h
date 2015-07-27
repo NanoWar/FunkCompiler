@@ -2,10 +2,11 @@
 #define AST_h
 
 #include "Global.h"
-#include "StringHelper.h"
 #include "Register.h"
 #include "Parser.h"
 #include "Console.h"
+#include "StringHelper.h"
+#include "StringBuffer.h"
 #include <typeinfo>
 
 class Node;
@@ -194,22 +195,22 @@ public:
 	CharsExpr(string chars)
 	{
 		Size = chars.length();
-		Target = chars;
 		HasStaticValue = true;
-
 		if(Size == 1)
 			Value = chars[0];
 		else
 			Value = chars[1] * 256 + chars[0];
+		stringstream ss;
+		ss << "'" << chars << "'";
+		Target = ss.str();
 	}
 };
 
 class StringExpr : public IdentExpr
 {
 public:
-	StringExpr(string str) : IdentExpr("str_xxx")
+	StringExpr(string str) : IdentExpr(AddString(str))
 	{
-		// TODO: Register string
 		Size = 2;
 	}
 };
@@ -271,12 +272,14 @@ class AssignStmt : public StatementNode
 {
 public:
 	string Target;
+	bool HasTargetRegister;
 	ERegister TargetRegister;
 	ExpressionNode *Expr;
 
 	AssignStmt(ERegister target, ExpressionNode *expr) : Expr(expr)
 	{
 		expr->Parent = this;
+		HasTargetRegister = true;
 		TargetRegister = target;
 		Target = RegisterStringMap[target];
 	}
@@ -284,6 +287,7 @@ public:
 	AssignStmt(string *target, ExpressionNode *expr) : Expr(expr)
 	{
 		expr->Parent = this;
+		HasTargetRegister = false;
 		// TODO: Resolve register
 		TargetRegister = ERegister::HL;
 		Target = *target;
@@ -320,7 +324,12 @@ public:
 class ParameterNode : public Node
 {
 public:
-	ParameterNode(string *name) { Name = *name; }
+	ParameterNode(string *name)
+	{
+		Name = *name;
+		// TODO: Register
+		auto id = GetIdentifier();
+	}
 	void Compile();
 };
 

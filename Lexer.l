@@ -22,7 +22,7 @@ using namespace std;
 %x rawbytestr_nohash
 %x pound
 %x shebang_or_attr
-%x ltorchar
+%x chars
 %x linecomment
 %x doc_line
 %x blockcomment
@@ -136,18 +136,18 @@ af'			{ return REG_AFS; }
 \> 		{ return '>'; }
 
  /* CHARS */
-\x27								{ BEGIN(ltorchar); yymore(); }
-<ltorchar>\x27						{ BEGIN(suffix); return TCHARS; }
-<ltorchar><<EOF>>					{ return -1; }
-<ltorchar>\\[n\nrt\\\x27\x220]		{ yymore(); }
-<ltorchar>\\x[0-9a-fA-F]{2}			{ yymore(); }
-<ltorchar>\\u\{[0-9a-fA-F]?{6}\}	{ yymore(); }
-<ltorchar>\\[^n\nrt\\\x27\x220]		{ return -1; }
-<ltorchar>(.|\n)					{ yymore(); }
+\x27							{ BEGIN(chars); yymore(); yytext++; }
+<chars>\x27						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return TCHARS; }
+<chars><<EOF>>					{ return -1; }
+<chars>\\[n\nrt\\\x27\x220]		{ yymore(); }
+<chars>\\x[0-9a-fA-F]{2}		{ yymore(); }
+<chars>\\u\{[0-9a-fA-F]?{6}\}	{ yymore(); }
+<chars>\\[^n\nrt\\\x27\x220]	{ return -1; }
+<chars>(.|\n)					{ yymore(); }
 
  /* STRING */
-\x22							{ BEGIN(str); yymore(); }
-<str>\x22						{ BEGIN(suffix); return TSTRING; }
+\x22							{ BEGIN(str); yymore(); yytext++; }
+<str>\x22						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return TSTRING; }
 <str><<EOF>>					{ return -1; }
 <str>\\[n\nrt\\\x27\x220]		{ yymore(); }
 <str>\\x[0-9a-fA-F]{2}			{ yymore(); }

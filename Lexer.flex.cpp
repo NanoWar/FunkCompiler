@@ -755,7 +755,7 @@ using namespace std;
 #define rawbytestr_nohash 9
 #define pound 10
 #define shebang_or_attr 11
-#define ltorchar 12
+#define chars 12
 #define linecomment 13
 #define doc_line 14
 #define blockcomment 15
@@ -1490,14 +1490,14 @@ YY_RULE_SETUP
 case 87:
 YY_RULE_SETUP
 #line 139 "Lexer.l"
-{ BEGIN(ltorchar); yymore(); }
+{ BEGIN(chars); yymore(); yytext++; }
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
 #line 140 "Lexer.l"
-{ BEGIN(suffix); return TCHARS; }
+{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return TCHARS; }
 	YY_BREAK
-case YY_STATE_EOF(ltorchar):
+case YY_STATE_EOF(chars):
 #line 141 "Lexer.l"
 { return -1; }
 	YY_BREAK
@@ -1532,12 +1532,12 @@ YY_RULE_SETUP
 case 94:
 YY_RULE_SETUP
 #line 149 "Lexer.l"
-{ BEGIN(str); yymore(); }
+{ BEGIN(str); yymore(); yytext++; }
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
 #line 150 "Lexer.l"
-{ BEGIN(suffix); return TSTRING; }
+{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return TSTRING; }
 	YY_BREAK
 case YY_STATE_EOF(str):
 #line 151 "Lexer.l"

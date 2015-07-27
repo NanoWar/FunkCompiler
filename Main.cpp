@@ -102,6 +102,7 @@ int main(int argc, char **argv)
 
 	// Compile
 	Program->Compile();
+	CompileCurrentStrings();
 
 	// Safety flush
 	fflush(output_file);

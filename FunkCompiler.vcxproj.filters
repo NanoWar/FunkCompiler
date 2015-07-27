@@ -21,9 +21,6 @@
     <ClCompile Include="Main.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="Grammar.tab.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="Compiler.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -40,6 +37,15 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="Identifier.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Grammar.tab.cpp">
+      <Filter>Generierte Dateien</Filter>
+    </ClCompile>
+    <ClCompile Include="StringBuffer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Writer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
@@ -73,6 +79,12 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="StringHelper.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="StringBuffer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Writer.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
