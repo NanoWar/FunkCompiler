@@ -8,3 +8,5 @@ Lexer.flex.cpp
 >>>>>>> OONodes
 FunkCompiler.vcxproj
 Grammar.tab.h
+FunkCompiler.vcxproj
+Grammar.tab.cpp
