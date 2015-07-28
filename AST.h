@@ -71,6 +71,7 @@ public:
 		}
 		return(OwnType *) this;
 	}
+
 	virtual void Compile() { }
 };
 
@@ -134,6 +135,7 @@ public:
 	{
 		HasTargetRegister = false;
 		HasStaticValue = false;
+		Size = 1;
 	}
 	
 	bool IsValid()
@@ -246,6 +248,7 @@ public:
 	IndirectionExpr(ExpressionNode *expr) : Expr(expr)
 	{
 		expr->Parent = this;
+		Size = 1;
 	}
 
 	~IndirectionExpr()

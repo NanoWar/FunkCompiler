@@ -123,7 +123,7 @@ assign
 ;
 
 call
-: ident '(' exprs ')'		{ $$ = new FunctionCallStmt($<ident>1, $<exprs>3); delete $1; }
+: ident '(' exprs ')'		{ $$ = new FunctionCallStmt($<ident>1, $<exprs>3); }
 ;
 
 

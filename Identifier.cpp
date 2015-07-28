@@ -33,7 +33,7 @@ string IdentNode::GetIdentifier()
 	for(auto it = Children.begin(); it != Children.end(); ++it) {
 		names.push_back(**it);
 	}
-	reverse(names.begin(), names.end());
+	//reverse(names.begin(), names.end());
 	auto result = join(names, ".");
 	return result;
 }

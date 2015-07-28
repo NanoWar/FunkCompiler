@@ -56,16 +56,28 @@ void PlusExpr::Compile()
 		Value = Lhs->Value + Rhs->Value;
 		target << Value;
 		Target = target.str();
+		Size = max(Lhs->Size, Rhs->Size);
 		return;
 	}
 	else {
 		if (Lhs->Size == Rhs->Size) {
-			write("\tpush\taf\n");
-			write(S_LOAD, RSM(A), Lhs->Target.c_str());
-			write(S_ADD_A, Rhs->Target.c_str());
-			write("\tpop\taf\n");
-			TargetRegister = ERegister::A;
-			HasTargetRegister = true;
+			//write("\tpush\taf\n");
+			if (Lhs->HasTargetRegister) {
+				write("\tadd\t%s, %s\n", RegisterStringMap[Lhs->TargetRegister].c_str(), Rhs->Target.c_str());
+				TargetRegister = Lhs->TargetRegister;
+				HasTargetRegister = true;
+			}
+			else {
+				write(S_LOAD, RSM(A), Lhs->Target.c_str());
+				write(S_ADD_A, Rhs->Target.c_str());
+				TargetRegister = ERegister::A;
+				HasTargetRegister = true;
+			}
+			//write("\tpop\taf\n");
+			target << RegisterStringMap[TargetRegister];
+			Target = target.str();
+			Size = Lhs->Size;
+			return;
 		}
 		else {
 			target << Lhs->Target << " + " << Rhs->Target;
