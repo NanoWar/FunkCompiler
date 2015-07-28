@@ -1,12 +1,6 @@
-<<<<<<< HEAD
-Debug/
-=======
 Debug/
 Grammar.tab.cpp
-FunkCompiler.vcxproj.user
-Lexer.flex.cpp
->>>>>>> OONodes
-FunkCompiler.vcxproj
 Grammar.tab.h
+Lexer.flex.cpp
+FunkCompiler.vcxproj.user
 FunkCompiler.vcxproj
-Grammar.tab.cpp
