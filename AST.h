@@ -27,35 +27,6 @@ public:
 	virtual void Compile() { }
 };
 
-template<typename ItemType, typename BaseType = Node>
-class ListNode : public BaseType
-{
-public:
-	vector<ItemType *> Children;
-
-	ListNode() {}
-	ListNode(ItemType *item) { Extend(item); }
-
-	ItemType *operator[](const int index)
-	{
-		return Children[index];
-	}
-
-	virtual ListNode *Extend(ItemType *node)
-	{
-		Children.push_back(node);
-		return this;
-	}
-
-	~ListNode()
-	{
-		for(auto child = Children.begin(); child != Children.end(); ++child) {
-			delete *child;
-		}
-	}
-
-};
-
 template<typename OwnType, typename ItemType, typename BaseType = Node>
 class ContainerNode : public BaseType
 {
@@ -159,6 +130,11 @@ public:
 	}
 
 	virtual void Compile() { }
+};
+
+class ExpressionsNode : public ContainerNode<ExpressionsNode, ExpressionNode>
+{
+public:
 };
 
 class IdentExpr : public ExpressionNode
@@ -328,7 +304,7 @@ public:
 	{
 		Name = *name;
 		// TODO: Register
-		auto id = GetIdentifier();
+		//auto id = GetIdentifier(); // Parent is not yet set.
 	}
 	void Compile();
 };
@@ -346,6 +322,22 @@ public:
 class OutputsNode : public ContainerNode<OutputsNode, OutputNode>
 {
 public:
+};
+
+class FunctionCallStmt : public StatementNode
+{
+public:
+	ExpressionsNode *Parameters;
+	FunctionCallStmt(string *name, ExpressionsNode *parameters) : Parameters(parameters)
+	{
+		Name = *name;
+		Parameters->Parent = this;
+	}
+	~FunctionCallStmt()
+	{
+		delete Parameters;
+	}
+	void Compile();
 };
 
 class FunctionDeclNode : public StatementNode

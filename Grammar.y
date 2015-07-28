@@ -21,9 +21,10 @@ extern StatementsNode *Program;
  string *str;
  StatementsNode *stmts;
  StatementNode *stmt;
+ ExpressionsNode *exprs;
  ExpressionNode *expr;
- ParametersNode *params;
- ParameterNode *param;
+ ParametersNode *fn_params;
+ ParameterNode *fn_param;
  FunctionDeclNode *fn;
  ModuleNode *mod;
  ERegister reg;
@@ -32,10 +33,11 @@ extern StatementsNode *Program;
 %debug
 
 %type <stmts> stmts program
-%type <stmt> stmt fn mod assign
+%type <stmt> stmt fn mod assign call
+%type <exprs> exprs
 %type <expr> expr
-%type <params> params
-%type <param> param
+%type <fn_params> fn_params
+%type <fn_param> fn_param
 %type <str> name
 %type <reg> reg
 
@@ -94,18 +96,19 @@ stmt
 : fn				/*{ $$ = $<stmt>1; }*/
 | mod				/*{ $$ = $<stmt>1; }*/
 | assign
+| call
 ;
 
 fn
-: FN name '(' params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<params>4, $<stmts>7); delete $2;}
+: FN name '(' fn_params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_params>4, $<stmts>7); delete $2;}
 ;
-params
-: /* empty */			{ $$ = new ParametersNode(); }
-| param					{ $$ = new ParametersNode(); $$->Extend($<param>1); }
-| params ',' param		{ $$ = $<params>1->Extend($<param>3); }
+fn_params
+: /* empty */				{ $$ = new ParametersNode(); }
+| fn_param					{ $$ = new ParametersNode(); $$->Extend($<fn_param>1); }
+| fn_params ',' fn_param	{ $$ = $<fn_params>1->Extend($<fn_param>3); }
 ;
-param
-: name					{ $$ = new ParameterNode($<str>1); delete $1; }
+fn_param
+: name						{ $$ = new ParameterNode($<str>1); delete $1; }
 ;
 
 mod
@@ -117,12 +120,20 @@ assign
 | name '=' expr				{ $$ = new AssignStmt($<str>1, $<expr>3); }
 ;
 
+call
+: name '(' exprs ')'		{ $$ = new FunctionCallStmt($<str>1, $<exprs>3); delete $1; }
+;
 
 
 
 ////////////////////////////////////////////////////////////////////////
 // EXPRESSIONS
 ////////////////////////////////////////////////////////////////////////
+
+exprs
+: /* empty */				{ $$ = new ExpressionsNode(); }
+| expr						{ $$ = new ExpressionsNode(); $$->Extend($<expr>1); }
+| exprs ',' expr			{ $$ = $<exprs>1->Extend($<expr>3); }
 
 expr
 : name						{ $$ = new IdentExpr(*$<str>1); delete $1; }

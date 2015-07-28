@@ -6,3 +6,5 @@ Grammar.tab.cpp
 FunkCompiler.vcxproj.user
 Lexer.flex.cpp
 >>>>>>> OONodes
+FunkCompiler.vcxproj
+Grammar.tab.h

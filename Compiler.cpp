@@ -22,7 +22,7 @@ void FunctionDeclNode::Compile()
 
 void ParameterNode::Compile()
 {
-	write(";  reg = %s\n", GetIdentifier().c_str());
+	write(";  %s (%s)\n", Name.c_str(), GetIdentifier().c_str());
 }
 
 void IndirectionExpr::Compile()
@@ -73,6 +73,12 @@ void PlusExpr::Compile()
 			return;
 		}
 	}
+}
+
+void FunctionCallStmt::Compile()
+{
+	Parameters->Compile();
+	write("\tcall\t%s\n", Name.c_str());
 }
 
 void AssignStmt::Compile()
