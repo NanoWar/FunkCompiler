@@ -77,8 +77,9 @@ void PlusExpr::Compile()
 
 void FunctionCallStmt::Compile()
 {
+	Ident->Compile();
 	Parameters->Compile();
-	write("\tcall\t%s\n", Name.c_str());
+	write("\tcall\t%s\n", Ident->GetIdentifier().c_str());
 }
 
 void AssignStmt::Compile()

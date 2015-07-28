@@ -19,6 +19,7 @@ extern StatementsNode *Program;
  void *unknown;
  int token;
  string *str;
+ IdentNode *ident;
  StatementsNode *stmts;
  StatementNode *stmt;
  ExpressionsNode *exprs;
@@ -32,13 +33,14 @@ extern StatementsNode *Program;
 
 %debug
 
+%type <str> name
+%type <ident> ident
 %type <stmts> stmts program
 %type <stmt> stmt fn mod assign call
 %type <exprs> exprs
 %type <expr> expr
 %type <fn_params> fn_params
 %type <fn_param> fn_param
-%type <str> name
 %type <reg> reg
 
 
@@ -121,7 +123,7 @@ assign
 ;
 
 call
-: name '(' exprs ')'		{ $$ = new FunctionCallStmt($<str>1, $<exprs>3); delete $1; }
+: ident '(' exprs ')'		{ $$ = new FunctionCallStmt($<ident>1, $<exprs>3); delete $1; }
 ;
 
 
@@ -161,6 +163,11 @@ expr
 
 name
 : NAME					{ $$ = new string(yytext); }
+;
+
+ident
+: name					{ $$ = new IdentNode($<str>1); delete $1; }
+| ident '.' name		{ $<ident>1->Extend($<str>3); }
 ;
 
 reg

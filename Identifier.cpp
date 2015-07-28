@@ -25,3 +25,15 @@ string Node::GetIdentifier()
 	StringToNode[result] = this; // ?
 	return result;
 }
+
+string IdentNode::GetIdentifier()
+{
+	vector<string> names;
+	names.push_back(Name);
+	for(auto it = Children.begin(); it != Children.end(); ++it) {
+		names.push_back(**it);
+	}
+	reverse(names.begin(), names.end());
+	auto result = join(names, ".");
+	return result;
+}

@@ -28,13 +28,13 @@ public:
 };
 
 template<typename OwnType, typename ItemType, typename BaseType = Node>
-class ContainerNode : public BaseType
+class VectorNode : public BaseType
 {
 public:
 	vector<ItemType *> Children;
 
-	ContainerNode() {}
-	ContainerNode(ItemType *item) { Extend(item); }
+	VectorNode() { }
+	VectorNode(ItemType *item) { Extend(item); }
 
 	bool HasChildren() { return Children.size() > 0; }
 
@@ -43,10 +43,9 @@ public:
 		return Children[index];
 	}
 
-	OwnType *Extend(ItemType *node)
+	virtual OwnType *Extend(ItemType *item)
 	{
-		Children.push_back(node);
-		((Node *) node)->Parent = this;
+		Children.push_back(item);
 		return(OwnType *) this;
 	}
 
@@ -56,24 +55,40 @@ public:
 		va_start(params, n);
 		Children.reserve(Children.size() + n);
 		for(int i = 0; i < n; i++) {
-			auto node = va_arg(params, ItemType *);
-			Extend(node);
+			auto item = va_arg(params, ItemType *);
+			Extend(item);
 		}
 		va_end(params);
 		return(OwnType *) this;
 	}
 
-	OwnType *Extend(vector<ItemType*> nodes)
+	OwnType *Extend(vector<ItemType*> items)
 	{
-		Children.reserve(Children.size() + nodes.size());
-		for(int i = 0; i < nodes.size(); i++) {
-			auto node = nodes[i];
-			Extend(node);
+		Children.reserve(Children.size() + items.size());
+		for(int i = 0; i < items.size(); i++) {
+			auto item = items[i];
+			Extend(item);
 		}
 		return(OwnType *) this;
 	}
+	virtual void Compile() { }
+};
 
-	void ContainerNode::Compile()
+template<typename OwnType, typename ItemType, typename BaseType = Node>
+class ContainerNode : public VectorNode<OwnType, ItemType, BaseType>
+{
+public:
+	ContainerNode() { }
+	ContainerNode(ItemType *item) : VectorNode(item) { }
+
+	OwnType *Extend(ItemType *node)
+	{
+		Children.push_back(node);
+		((Node *) node)->Parent = this;
+		return(OwnType *) this;
+	}
+
+	void Compile()
 	{
 		for(auto child = Children.begin(); child != Children.end(); ++child) {
 			(*child)->Compile();
@@ -86,7 +101,6 @@ public:
 			delete *child;
 		}
 	}
-
 };
 
 class StatementNode : public Node
@@ -135,6 +149,16 @@ public:
 class ExpressionsNode : public ContainerNode<ExpressionsNode, ExpressionNode>
 {
 public:
+};
+
+class IdentNode : public VectorNode<IdentNode, string>
+{
+public:
+	IdentNode(string *name)
+	{
+		Name = *name;
+	}
+	string GetIdentifier();
 };
 
 class IdentExpr : public ExpressionNode
@@ -327,14 +351,17 @@ public:
 class FunctionCallStmt : public StatementNode
 {
 public:
+	IdentNode *Ident;
 	ExpressionsNode *Parameters;
-	FunctionCallStmt(string *name, ExpressionsNode *parameters) : Parameters(parameters)
+
+	FunctionCallStmt(IdentNode *ident, ExpressionsNode *parameters) : Ident(ident), Parameters(parameters)
 	{
-		Name = *name;
+		Ident->Parent = this;
 		Parameters->Parent = this;
 	}
 	~FunctionCallStmt()
 	{
+		delete Ident;
 		delete Parameters;
 	}
 	void Compile();
