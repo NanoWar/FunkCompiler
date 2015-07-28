@@ -3,4 +3,3 @@ Grammar.tab.cpp
 Grammar.tab.h
 Lexer.flex.cpp
 FunkCompiler.vcxproj.user
-FunkCompiler.vcxproj
