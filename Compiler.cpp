@@ -10,7 +10,7 @@
 
 void FunctionDeclNode::Compile()
 {
-	info("%d: Compiling Function %s\n", SourceLine, GetIdentifier().c_str());
+	info("%d: Compiling function %s\n", SourceLine, GetIdentifier().c_str());
 	//write("\n;------------------------------\n; Function: %s\n;------------------------------\n", Name.c_str());
 	write("%s\n", GetIdentifier().c_str());
 	if (Parameters->HasChildren()) {
@@ -35,7 +35,7 @@ void IndirectionExpr::Compile()
 
 void ModuleNode::Compile()
 {
-	info("%d: Compiling Module %s\n", SourceLine, GetIdentifier().c_str());
+	info("%d: Compiling module %s\n", SourceLine, GetIdentifier().c_str());
 	write("\n;==============================\n; Module: %s\n;==============================\n\n", GetIdentifier().c_str());
 	Statements->Compile();
 }

@@ -5,6 +5,20 @@ using namespace std;
 #include "AST.h"
 #include "Register.h"
 #include "Grammar.tab.h"
+
+#define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line; \
+    yylloc.first_column = yylloc.last_column; \
+    for(int i = 0; yytext[i] != '\0'; i++) { \
+        if(yytext[i] == '\n') { \
+            yylloc.last_line++; \
+            yylloc.last_column = 1; \
+        } \
+        else { \
+            yylloc.last_column++; \
+        } \
+    }
+
 %}
 
 %option noyywrap

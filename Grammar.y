@@ -32,6 +32,7 @@ extern StatementsNode *Program;
 }
 
 %debug
+%locations
 
 %type <str> name
 %type <ident> ident

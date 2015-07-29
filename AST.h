@@ -21,7 +21,12 @@ public:
 	int SourceLine;
 	Node *Parent;
 
-	Node() : Parent(NULL) { Name = ""; }
+	Node()
+	{
+		Name = "";
+		Parent = NULL;
+		SourceLine = yylloc.first_line;
+	}
 
 	string GetIdentifier();
 	virtual void Compile() { }
@@ -107,10 +112,6 @@ public:
 class StatementNode : public Node
 {
 public:
-	StatementNode()
-	{
-		SourceLine = yylineno;
-	}
 };
 
 class StatementsNode : public ContainerNode<StatementsNode, StatementNode>
@@ -268,6 +269,7 @@ public:
 		HasTargetRegister = true;
 		TargetRegister = reg;
 		Target = RegisterStringMap[reg];
+		info("Register %s in line %d\n", Target.c_str(), SourceLine);
 	}
 };
 
@@ -314,6 +316,7 @@ public:
 	{
 		Name = *name;
 		statements->Parent = this;
+		info("Module %s in line %d\n", Name.c_str(), SourceLine);
 	}
 
 	~ModuleNode()
