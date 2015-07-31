@@ -100,9 +100,16 @@ int main(int argc, char **argv)
 	int yyparse_ret = yyparse();
 	info("--- PARSE COMPLETE: ret:%d ---\n", yyparse_ret);
 
+	// Evaluate
+	Program->Evaluate();
+	
 	// Compile
 	Program->Compile();
+
+	// Add strings
 	CompileCurrentStrings();
+
+
 
 	// Safety flush
 	fflush(output_file);
@@ -113,7 +120,6 @@ int main(int argc, char **argv)
 	if(tmp_file) {
 		remove(tmp_file);
 	}
-
 
 	if(errors) print("There where errors\n");
 	else print("Success!\n");

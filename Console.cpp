@@ -60,6 +60,7 @@ BOOL CtrlHandler (DWORD fdwCtrlType)
 		return TRUE;
 	*/
 	}
+	return FALSE;
 }
 
 void AddConsoleCtrlHandler ()

@@ -48,6 +48,9 @@
     <ClCompile Include="Writer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="Evaluator.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Flex Include="Lexer.l">

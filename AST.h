@@ -9,6 +9,8 @@
 #include "StringBuffer.h"
 #include <typeinfo>
 
+void info (const char* format, ...);
+
 class Node;
 
 extern map<Node*, string> NodeToString;
@@ -29,6 +31,7 @@ public:
 	}
 
 	string GetIdentifier();
+	virtual void Evaluate() { }
 	virtual void Compile() { }
 };
 
@@ -76,8 +79,6 @@ public:
 		}
 		return(OwnType *) this;
 	}
-
-	virtual void Compile() { }
 };
 
 template<typename OwnType, typename ItemType, typename BaseType = Node>
@@ -92,6 +93,13 @@ public:
 		Children.push_back(node);
 		((Node *) node)->Parent = this;
 		return(OwnType *) this;
+	}
+
+	void Evaluate()
+	{
+		for(auto child = Children.begin(); child != Children.end(); ++child) {
+			(*child)->Evaluate();
+		}
 	}
 
 	void Compile()
@@ -324,6 +332,7 @@ public:
 		delete Statements;
 	}
 	
+	void Evaluate();
 	void Compile();
 };
 
@@ -333,9 +342,8 @@ public:
 	ParameterNode(string *name)
 	{
 		Name = *name;
-		// TODO: Register
-		//auto id = GetIdentifier(); // Parent is not yet set.
 	}
+	void Evaluate();
 	void Compile();
 };
 
@@ -386,7 +394,8 @@ public:
 		parameters->Parent = this;
 		statements->Parent = this;
 	}
-
+	
+	void Evaluate();
 	void Compile();
 
 	~FunctionDeclNode()
