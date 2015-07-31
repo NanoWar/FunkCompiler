@@ -44,28 +44,38 @@ string IdentNode::GetIdentifier()
 	Node *node;
 	string result;
 	while(parent) {
+		// Search for complete path
 		reverse(names.begin(), names.end()); // down
 		result = join(names, ".");
 		reverse(names.begin(), names.end()); // up
 		node = StringToNode[result];
 		if(node != NULL) break;
+
 		// Jump over unnamed container Nodes
 		if(!parent->Name.empty()) {
+
+			// Search for higher matches
+			auto high = join(".", 2, parent->Name, name);
+			node = StringToNode[high];
+			if (node != NULL) break;
+
 			if(dynamic_cast<ModuleNode*>(parent)) {
 				names.push_back(parent->Name);
 			}
 		}
+
+		// Next
 		parent = parent->Parent;
 	}
 	if(node != NULL) {
 		result = NodeToString[node];
 		if(result.empty()) {
-			// TODO: Log error
+			info("Could not find label %s.\n", name.c_str());
 			result = name;
 		}
 	}
 	else {
-		// TODO: Log error
+		info("Could not find label %s.\n", name.c_str());
 		result = name;
 	}
 	return result;

@@ -18,13 +18,13 @@ FILE *output_file = stdout;
 
 int main(int argc, char **argv)
 {
-	int expect_input = 0;
+	int expect_input_string = 0;
 	int expect_input_file = 0;
 	int expect_output_file = 0;
 
 	for(int i = 1; i < argc; i++) {
-		if(expect_input) {
-			expect_input = 0;
+		if (expect_input_string) {
+			expect_input_string = 0;
 			tmp_file = "_tmp";
 			auto f = fopen(tmp_file, "w+");
 			fwrite(argv[i], sizeof(char), strlen(argv[i]), f);
@@ -32,13 +32,13 @@ int main(int argc, char **argv)
 			yyin = fopen(tmp_file, "r");
 		}
 
-		if(expect_input_file) {
+		if (expect_input_file) {
 			expect_input_file = 0;
 			yyin = fopen(argv[i], "r");
 			if(!yyin) { cerr << "Error: Could not open input file <" << argv[i] << ">" << endl; return -1; }
 		}
 
-		if(expect_output_file) {
+		if (expect_output_file) {
 			expect_output_file = 0;
 			output_file = fopen(argv[i], "w+");
 			if(!output_file) { cerr << "Error: Could not create output file <" << argv[i] << ">" << endl; return -1; }
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 		if(strcmp(argv[i], "-t") == 0) tree = 1;
 
 		// -x Execute
-		if(strcmp(argv[i], "-x") == 0) expect_input = 1;
+		if(strcmp(argv[i], "-x") == 0) expect_input_string = 1;
 
 		// -i Input file
 		if(strcmp(argv[i], "-i") == 0) expect_input_file = 1;
