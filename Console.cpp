@@ -3,16 +3,17 @@
 #include "Console.h"
 #include "AST.h"
 
+#ifdef WIN32
+
+//saved console attributes, to be restored on exit
+WORD user_attributes;
+
+#endif WIN32
+
 extern int quiet;
 extern int verbose;
 
 int const indent_step = 2;
-
-#ifdef WIN32
-#include <WinBase.h>
-//saved console attributes, to be restored on exit
-WORD user_attributes;
-#endif
 
 void RestoreConsoleAttributes() {
 #ifdef WIN32
@@ -38,17 +39,36 @@ void SetConsoleAttributes(unsigned short attr) {
 #endif
 }
 
-
-
-
+// Only in verbose mode
 void info(const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 	if (!quiet && verbose) {
-#ifdef WIN32
-		HANDLE hConsole = GetStdHandle(stdout);
-		SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE);
+		SetConsoleAttributes(Console::GREEN);
 		vprintf(format, args);
+		RestoreConsoleAttributes();
+	}
+	va_end(args);
+}
+
+void warn(const char* format, ...) {
+	va_list args;
+	va_start(args, format);
+	if (!quiet) {
+		SetConsoleAttributes(Console::YELLOW);
+		vprintf(format, args);
+		RestoreConsoleAttributes();
+	}
+	va_end(args);
+}
+
+void error(const char* format, ...) {
+	va_list args;
+	va_start(args, format);
+	if (!quiet) {
+		SetConsoleAttributes(Console::RED);
+		vprintf(format, args);
+		RestoreConsoleAttributes();
 	}
 	va_end(args);
 }
@@ -65,9 +85,10 @@ void print(const char* format, ...) {
 void print_indent(int depth) {
 	while (depth) {
 		if (depth-- % indent_step == 0) {
-			print ("|");
-		} else {
-			print (" ");
+			print("|");
+		}
+		else {
+			print(" ");
 		}
 	}
 }
@@ -76,32 +97,27 @@ void print_node(Node *n, int depth) {
 	int i = 0;
 	print_indent(depth);
 	print(n->GetIdentifier().c_str());
-	print ("\n");
+	print("\n");
 }
 
 
 #ifdef WIN32
 #include <windows.h>
 
-BOOL CtrlHandler (DWORD fdwCtrlType) 
+BOOL CtrlHandler(DWORD fdwCtrlType)
 {
-	switch( fdwCtrlType ) 
+	switch (fdwCtrlType)
 	{
 	case CTRL_C_EVENT:
-		//cout << "Ctrl-C event" << endl;
 		return TRUE;
-
-	/*case CTRL_CLOSE_EVENT:
-		cout << "Ctrl-Close event" << endl;
-		return TRUE;
-	*/
+	default:
+		return FALSE;
 	}
-	return FALSE;
 }
 
-void AddConsoleCtrlHandler ()
+void AddConsoleCtrlHandler()
 {
-	SetConsoleCtrlHandler ((PHANDLER_ROUTINE) CtrlHandler, TRUE);
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
 }
 
 #else

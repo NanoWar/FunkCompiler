@@ -70,12 +70,12 @@ string IdentNode::GetIdentifier()
 	if(node != NULL) {
 		result = NodeToString[node];
 		if(result.empty()) {
-			info("Could not find label %s.\n", name.c_str());
+			warn("Could not find label '%s'.\n", name.c_str());
 			result = name;
 		}
 	}
 	else {
-		info("Could not find label %s.\n", name.c_str());
+		warn("Could not find label '%s'.\n", name.c_str());
 		result = name;
 	}
 	return result;

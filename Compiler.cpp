@@ -18,6 +18,7 @@ void FunctionDeclNode::Compile()
 		Parameters->Compile();
 	}
 	Statements->Compile();
+	write("\tret\n\n");
 }
 
 void ParameterNode::Compile()
@@ -89,9 +90,25 @@ void PlusExpr::Compile()
 
 void FunctionCallStmt::Compile()
 {
-	Ident->Compile();
 	Parameters->Compile();
-	write("\tcall\t%s\n", Ident->GetIdentifier().c_str());
+
+	auto id = Ident->GetIdentifier();
+
+	// Find declaration
+	auto decl = StringToNode[id];
+	if (dynamic_cast<FunctionDeclNode*>(decl)) {
+		auto decl_params = ((FunctionDeclNode*)decl)->Parameters;
+		if (decl_params->Children.size() != Parameters->Children.size()) {
+			warn("Parameter mismatch.\n");
+		}
+		else {
+			for (unsigned int i = 0; i < Parameters->Children.size(); i++) {
+				auto assign = new AssignStmt(decl_params->Children[i]->Register, Parameters->Children[i]);
+				assign->Compile();
+			}
+		}
+	}
+	write("\tcall\t%s\n", id.c_str());
 }
 
 void AssignStmt::Compile()

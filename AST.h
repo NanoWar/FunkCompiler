@@ -277,7 +277,7 @@ public:
 		HasTargetRegister = true;
 		TargetRegister = reg;
 		Target = RegisterStringMap[reg];
-		info("Register %s in line %d\n", Target.c_str(), SourceLine);
+		//info("Register %s in line %d\n", Target.c_str(), SourceLine);
 	}
 };
 
@@ -339,7 +339,8 @@ public:
 class ParameterNode : public Node
 {
 public:
-	ParameterNode(string *name)
+	ERegister Register;
+	ParameterNode(string *name, ERegister reg) : Register(reg)
 	{
 		Name = *name;
 	}
@@ -378,6 +379,7 @@ public:
 		delete Ident;
 		delete Parameters;
 	}
+	//void Evaluate();
 	void Compile();
 };
 

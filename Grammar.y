@@ -60,10 +60,10 @@ extern StatementsNode *Program;
 // Keywords
 %token <token> LET IF ELIF ELSE MATCH LOOP END RETURN
 %token <token> FN MOD ENUM STRUCT
-%token <token> TRUE FALSE
+%token <token> tTRUE tFALSE
 
 // Types
-%token <token> BYTE WORD BOOL REG8 REG16
+%token <token> tBYTE tWORD tBOOL REG8 REG16
 
 %token <reg> REG_A REG_F REG_B REG_C REG_D REG_E REG_H REG_L REG_IXH REG_IXL REG_IYH REG_IYL REG_I REG_R
 %token <reg> REG_AF REG_BC REG_DE REG_HL REG_IX REG_IY REG_AFS
@@ -111,7 +111,7 @@ fn_params
 | fn_params ',' fn_param	{ $$ = $<fn_params>1->Extend($<fn_param>3); }
 ;
 fn_param
-: name						{ $$ = new ParameterNode($<str>1); delete $1; }
+: name ':' reg				{ $$ = new ParameterNode($<str>1, $<reg>3); delete $1; }
 ;
 
 mod

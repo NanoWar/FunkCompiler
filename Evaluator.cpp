@@ -15,13 +15,13 @@ void ParameterNode::Evaluate()
 
 void ModuleNode::Evaluate()
 {
-	GetIdentifier(); // Register
+	GetIdentifier(); // Register id
 	Statements->Evaluate();
 }
 
 void FunctionDeclNode::Evaluate()
 {
-	GetIdentifier(); // Register
+	GetIdentifier(); // Register id
 	Parameters->Evaluate();
 	Statements->Evaluate();
 }

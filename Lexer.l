@@ -75,13 +75,13 @@ mod 		{ return MOD; }
 enum 		{ return ENUM; }
 struct 		{ return STRUCT; }
 
-true 		{ return TRUE; }
-false 		{ return FALSE; }
+true 		{ return tTRUE; }
+false 		{ return tFALSE; }
 
  /* Types */
-byte		{ return BYTE; }
-word		{ return WORD; }
-bool		{ return BOOL; }
+byte		{ return tBYTE; }
+word		{ return tWORD; }
+bool		{ return tBOOL; }
 reg			{ return REG8; }
 reg8		{ return REG8; }
 reg16		{ return REG16; }

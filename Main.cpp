@@ -18,11 +18,13 @@ FILE *output_file = stdout;
 
 int main(int argc, char **argv)
 {
+	SaveConsoleAttributes();
+
 	int expect_input_string = 0;
 	int expect_input_file = 0;
 	int expect_output_file = 0;
 
-	for(int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		if (expect_input_string) {
 			expect_input_string = 0;
 			tmp_file = "_tmp";
@@ -35,45 +37,45 @@ int main(int argc, char **argv)
 		if (expect_input_file) {
 			expect_input_file = 0;
 			yyin = fopen(argv[i], "r");
-			if(!yyin) { cerr << "Error: Could not open input file <" << argv[i] << ">" << endl; return -1; }
+			if (!yyin) { cerr << "Error: Could not open input file <" << argv[i] << ">" << endl; return -1; }
 		}
 
 		if (expect_output_file) {
 			expect_output_file = 0;
 			output_file = fopen(argv[i], "w+");
-			if(!output_file) { cerr << "Error: Could not create output file <" << argv[i] << ">" << endl; return -1; }
+			if (!output_file) { cerr << "Error: Could not create output file <" << argv[i] << ">" << endl; return -1; }
 		}
 
 		// -v Verbose
-		if(strcmp(argv[i], "-v") == 0) verbose = 1;
+		if (strcmp(argv[i], "-v") == 0) verbose = 1;
 
 		// -q Quiet
-		if(strcmp(argv[i], "-q") == 0) quiet = 1;
+		if (strcmp(argv[i], "-q") == 0) quiet = 1;
 
 		// -d Debug
-		if(strcmp(argv[i], "-d") == 0) yydebug = 1;
+		if (strcmp(argv[i], "-d") == 0) yydebug = 1;
 
 		// -t Tree
-		if(strcmp(argv[i], "-t") == 0) tree = 1;
+		if (strcmp(argv[i], "-t") == 0) tree = 1;
 
 		// -x Execute
-		if(strcmp(argv[i], "-x") == 0) expect_input_string = 1;
+		if (strcmp(argv[i], "-x") == 0) expect_input_string = 1;
 
 		// -i Input file
-		if(strcmp(argv[i], "-i") == 0) expect_input_file = 1;
+		if (strcmp(argv[i], "-i") == 0) expect_input_file = 1;
 
 		// -o Output file
-		if(strcmp(argv[i], "-o") == 0) expect_output_file = 1;
+		if (strcmp(argv[i], "-o") == 0) expect_output_file = 1;
 
 	}
 
-	if(!quiet) {
+	if (!quiet) {
 		cout << "FunkCompiler by Robert Kuhfss" << endl;
-		if(verbose) cout << "-> verbose mode" << endl;
-		if(yydebug) cout << "-> debug mode" << endl;
+		if (verbose) cout << "-> verbose mode" << endl;
+		if (yydebug) cout << "-> debug mode" << endl;
 	}
 
-	if(argc == 1) {
+	if (argc == 1) {
 		// Display usage
 		cout << endl << "Usage:" << endl;
 		cout << "  -v          " << "Verbose mode (shows additional output)" << endl;
@@ -87,7 +89,7 @@ int main(int argc, char **argv)
 	}
 
 
-	if(yyin == stdin) {
+	if (yyin == stdin) {
 		print("Reading from console input...");
 		AddConsoleCtrlHandler();
 	}
@@ -100,15 +102,17 @@ int main(int argc, char **argv)
 	int yyparse_ret = yyparse();
 	info("--- PARSE COMPLETE: ret:%d ---\n", yyparse_ret);
 
-	// Evaluate
-	Program->Evaluate();
-	
-	// Compile
-	Program->Compile();
+	if (!yyparse_ret) {
 
-	// Add strings
-	CompileCurrentStrings();
+		// Evaluate
+		Program->Evaluate();
 
+		// Compile
+		Program->Compile();
+
+		// Add strings
+		CompileCurrentStrings();
+	}
 
 
 	// Safety flush
@@ -117,17 +121,18 @@ int main(int argc, char **argv)
 	// Clean up files
 	fclose(yyin);
 	fclose(output_file);
-	if(tmp_file) {
+	if (tmp_file) {
 		remove(tmp_file);
 	}
 
-	if(errors) print("There where errors\n");
+	if (errors) print("There where errors.\n");
 	else print("Success!\n");
 
+	RestoreConsoleAttributes();
 	return yyparse_ret;
 }
 
 void yyerror(char const *s) {
 	errors++;
-	if(!quiet) fprintf(stderr, "%s in line %d\n", s, yylineno);
+	error("%s in line %d\n", s, yylineno);
 }
