@@ -23,7 +23,7 @@ void FunctionDeclNode::Compile()
 
 void ParameterNode::Compile()
 {
-	write(";  %s (%s)\n", Name.c_str(), GetIdentifier().c_str());
+	write(";  %s = %s\n", RegisterStringMap[Register].c_str(), Name.c_str());
 }
 
 void IndirectionExpr::Compile()
@@ -43,8 +43,18 @@ void ModuleNode::Compile()
 
 void IdentExpr::Compile()
 {
-	// TODO: Look up
-	Target = Ident;
+	auto id = GetIdentifier();
+	auto node = StringToNode[id];
+	if (dynamic_cast<ParameterNode*>(node))
+	{
+		TargetRegister = ((ParameterNode*)node)->Register;
+		HasTargetRegister = true;
+		//TODO: this should not be set:
+		Target = RegisterStringMap[TargetRegister];
+	}
+	else {
+		Target = Name;
+	}
 }
 
 void PlusExpr::Compile()

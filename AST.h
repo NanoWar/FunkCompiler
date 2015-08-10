@@ -165,9 +165,9 @@ public:
 class IdentNode : public VectorNode<IdentNode, string>
 {
 public:
-	IdentNode(string *name)
+	IdentNode(string name)
 	{
-		Name = *name;
+		Name = name;
 	}
 	string GetIdentifier();
 };
@@ -175,10 +175,9 @@ public:
 class IdentExpr : public ExpressionNode
 {
 public:
-	string Ident;
 	IdentExpr(string ident)
 	{
-		Ident = ident;
+		Name = ident;
 		Size = 2;
 	}
 	void Compile();

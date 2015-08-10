@@ -54,8 +54,8 @@ extern StatementsNode *Program;
 %token <token> DOTDOT DOTDOTDOT MOD_SEP
 %token <token> RARROW FAT_ARROW
 
-%token <str> TINTEGER
-%token <str> TCHARS TSTRING NAME
+%token <str> tINTEGER
+%token <str> tCHARS tSTRING NAME
 
 // Keywords
 %token <token> LET IF ELIF ELSE MATCH LOOP END RETURN
@@ -140,9 +140,9 @@ exprs
 
 expr
 : name						{ $$ = new IdentExpr(*$<str>1); delete $1; }
-| TINTEGER					{ $$ = new NumberExpr(string(yytext)); }
-| TCHARS					{ $$ = new CharsExpr(string(yytext)); }
-| TSTRING					{ $$ = new StringExpr(string(yytext)); }
+| tINTEGER					{ $$ = new NumberExpr(string(yytext)); }
+| tCHARS					{ $$ = new CharsExpr(string(yytext)); }
+| tSTRING					{ $$ = new StringExpr(string(yytext)); }
 | reg						{ $$ = new RegisterExpr($<reg>1); }
 | expr '+' expr				{ $$ = new PlusExpr($<expr>1, $<expr>3); }
 | '*' expr					{ $$ = new IndirectionExpr($<expr>2); }
@@ -167,7 +167,7 @@ name
 ;
 
 ident
-: name					{ $$ = new IdentNode($<str>1); delete $1; }
+: name					{ $$ = new IdentNode(*$<str>1); delete $1; }
 | ident '.' name		{ $<ident>1->Extend($<str>3); }
 ;
 

@@ -111,10 +111,10 @@ af'			{ return REG_AFS; }
 
 {name}		{ return NAME; }
 
-0x[0-9a-fA-F_]+	{ BEGIN(suffix); return TINTEGER; }
-0o[0-8_]+		{ BEGIN(suffix); return TINTEGER; }
-0b[01_]+		{ BEGIN(suffix); return TINTEGER; }
-[0-9][0-9_]*	{ BEGIN(suffix); return TINTEGER; }
+0x[0-9a-fA-F_]+	{ BEGIN(suffix); return tINTEGER; }
+0o[0-8_]+		{ BEGIN(suffix); return tINTEGER; }
+0b[01_]+		{ BEGIN(suffix); return tINTEGER; }
+[0-9][0-9_]*	{ BEGIN(suffix); return tINTEGER; }
 
 ;		{ return ';'; }
 ,		{ return ','; }
@@ -151,7 +151,7 @@ af'			{ return REG_AFS; }
 
  /* CHARS */
 \x27							{ BEGIN(chars); yymore(); yytext++; }
-<chars>\x27						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return TCHARS; }
+<chars>\x27						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return tCHARS; }
 <chars><<EOF>>					{ return -1; }
 <chars>\\[n\nrt\\\x27\x220]		{ yymore(); }
 <chars>\\x[0-9a-fA-F]{2}		{ yymore(); }
@@ -161,7 +161,7 @@ af'			{ return REG_AFS; }
 
  /* STRING */
 \x22							{ BEGIN(str); yymore(); yytext++; }
-<str>\x22						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return TSTRING; }
+<str>\x22						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return tSTRING; }
 <str><<EOF>>					{ return -1; }
 <str>\\[n\nrt\\\x27\x220]		{ yymore(); }
 <str>\\x[0-9a-fA-F]{2}			{ yymore(); }

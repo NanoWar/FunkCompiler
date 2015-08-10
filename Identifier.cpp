@@ -24,7 +24,10 @@ string Node::GetIdentifier()
 	reverse(names.begin(), names.end());
 	auto result = join(names, ".");
 	NodeToString[this] = result;
-	StringToNode[result] = this;
+	if (!StringToNode[result]) {
+		// Dont overwrite declarations
+		StringToNode[result] = this;
+	}
 	return result;
 }
 
