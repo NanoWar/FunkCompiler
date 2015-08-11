@@ -19,7 +19,7 @@ extern StatementsNode *Program;
  void *unknown;
  int token;
  string *str;
- IdentNode *ident;
+ IdentExpr *ident;
  StatementsNode *stmts;
  StatementNode *stmt;
  ExpressionsNode *exprs;
@@ -120,7 +120,7 @@ mod
 
 assign
 : reg '=' expr				{ $$ = new AssignStmt($<reg>1, $<expr>3); }
-| name '=' expr				{ $$ = new AssignStmt($<str>1, $<expr>3); }
+| ident '=' expr			{ $$ = new AssignStmt($<ident>1, $<expr>3); }
 ;
 
 call
@@ -139,7 +139,7 @@ exprs
 | exprs ',' expr			{ $$ = $<exprs>1->Extend($<expr>3); }
 
 expr
-: name						{ $$ = new IdentExpr(*$<str>1); delete $1; }
+: ident
 | tINTEGER					{ $$ = new NumberExpr(string(yytext)); }
 | tCHARS					{ $$ = new CharsExpr(string(yytext)); }
 | tSTRING					{ $$ = new StringExpr(string(yytext)); }
@@ -158,6 +158,7 @@ expr
 | '(' expr ')'				{ $$ = $<expr>2; }
 ;
 
+
 ////////////////////////////////////////////////////////////////////////
 // IDENTIFIERS
 ////////////////////////////////////////////////////////////////////////
@@ -167,7 +168,7 @@ name
 ;
 
 ident
-: name					{ $$ = new IdentNode(*$<str>1); delete $1; }
+: name					{ $$ = new IdentExpr(*$<str>1); delete $1; }
 | ident '.' name		{ $<ident>1->Extend($<str>3); }
 ;
 

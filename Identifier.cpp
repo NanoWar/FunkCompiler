@@ -24,19 +24,27 @@ string Node::GetIdentifier()
 	reverse(names.begin(), names.end());
 	auto result = join(names, ".");
 	NodeToString[this] = result;
-	if (!StringToNode[result]) {
-		// Dont overwrite declarations
-		StringToNode[result] = this;
-	}
 	return result;
 }
 
-string IdentNode::GetIdentifier()
+string IdentExpr::GetName()
+{
+	vector<string> names;
+	names.push_back(Name);
+	for (auto it = Children.begin(); it != Children.end(); ++it) {
+		names.push_back(**it);
+	}
+	string name = join(names, ".");
+	return name;
+}
+
+
+Node *IdentExpr::GetReferenced()
 {
 	// Build own name
 	vector<string> names;
 	names.push_back(Name);
-	for(auto it = Children.begin(); it != Children.end(); ++it) {
+	for (auto it = Children.begin(); it != Children.end(); ++it) {
 		names.push_back(**it);
 	}
 	string name = join(names, ".");
@@ -44,25 +52,28 @@ string IdentNode::GetIdentifier()
 	// Search for matches up the tree
 	reverse(names.begin(), names.end()); // make order upwards hierarchical
 	Node *parent = Parent;
-	Node *node;
+	Node *node = NULL;
 	string result;
-	while(parent) {
+	while (parent) {
 		// Search for complete path
 		reverse(names.begin(), names.end()); // down
 		result = join(names, ".");
 		reverse(names.begin(), names.end()); // up
 		node = StringToNode[result];
-		if(node != NULL) break;
+		if (node != NULL) break;
 
 		// Jump over unnamed container Nodes
-		if(!parent->Name.empty()) {
+		if (!parent->Name.empty()) {
 
 			// Search for higher matches
-			auto high = join(".", 2, parent->Name, name);
-			node = StringToNode[high];
+			result = join(".", 2, parent->Name, name);
+			node = StringToNode[result];
 			if (node != NULL) break;
 
-			if(dynamic_cast<ModuleNode*>(parent)) {
+			if (dynamic_cast<FunctionDeclNode*>(parent)) {
+				names.push_back(parent->Name);
+			}
+			if (dynamic_cast<ModuleNode*>(parent)) {
 				names.push_back(parent->Name);
 			}
 		}
@@ -70,16 +81,5 @@ string IdentNode::GetIdentifier()
 		// Next
 		parent = parent->Parent;
 	}
-	if(node != NULL) {
-		result = NodeToString[node];
-		if(result.empty()) {
-			warn("Could not find label '%s'.\n", name.c_str());
-			result = name;
-		}
-	}
-	else {
-		warn("Could not find label '%s'.\n", name.c_str());
-		result = name;
-	}
-	return result;
+	return node;
 }

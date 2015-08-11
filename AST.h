@@ -162,17 +162,7 @@ class ExpressionsNode : public ContainerNode<ExpressionsNode, ExpressionNode>
 public:
 };
 
-class IdentNode : public VectorNode<IdentNode, string>
-{
-public:
-	IdentNode(string name)
-	{
-		Name = name;
-	}
-	string GetIdentifier();
-};
-
-class IdentExpr : public ExpressionNode
+class IdentExpr : public VectorNode<IdentExpr, string, ExpressionNode>
 {
 public:
 	IdentExpr(string ident)
@@ -180,6 +170,8 @@ public:
 		Name = ident;
 		Size = 2;
 	}
+	Node *GetReferenced();
+	string GetName();
 	void Compile();
 };
 
@@ -223,6 +215,7 @@ public:
 	{
 		Size = 2;
 	}
+	void Compile() { Target = Name; }
 };
 
 class PlusExpr : public ExpressionNode
@@ -283,30 +276,25 @@ public:
 class AssignStmt : public StatementNode
 {
 public:
-	string Target;
-	bool HasTargetRegister;
-	ERegister TargetRegister;
+	ExpressionNode *Target;
 	ExpressionNode *Expr;
 
 	AssignStmt(ERegister target, ExpressionNode *expr) : Expr(expr)
 	{
-		expr->Parent = this;
-		HasTargetRegister = true;
-		TargetRegister = target;
-		Target = RegisterStringMap[target];
+		Target = new RegisterExpr(target);
+		Target->Parent = this;
+		Expr->Parent = this;
 	}
 
-	AssignStmt(string *target, ExpressionNode *expr) : Expr(expr)
+	AssignStmt(IdentExpr *ident, ExpressionNode *expr) : Target(ident), Expr(expr)
 	{
-		expr->Parent = this;
-		HasTargetRegister = false;
-		// TODO: Resolve register
-		TargetRegister = ERegister::HL;
-		Target = *target;
+		Target->Parent = this;
+		Expr->Parent = this;
 	}
 
 	~AssignStmt()
 	{
+		delete Target;
 		delete Expr;
 	}
 
@@ -365,10 +353,10 @@ public:
 class FunctionCallStmt : public StatementNode
 {
 public:
-	IdentNode *Ident;
+	IdentExpr *Ident;
 	ExpressionsNode *Parameters;
 
-	FunctionCallStmt(IdentNode *ident, ExpressionsNode *parameters) : Ident(ident), Parameters(parameters)
+	FunctionCallStmt(IdentExpr *ident, ExpressionsNode *parameters) : Ident(ident), Parameters(parameters)
 	{
 		Ident->Parent = this;
 		Parameters->Parent = this;
@@ -378,7 +366,6 @@ public:
 		delete Ident;
 		delete Parameters;
 	}
-	//void Evaluate();
 	void Compile();
 };
 

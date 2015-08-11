@@ -8,20 +8,31 @@
 #include "StringBuffer.h"
 #include "Writer.h"
 
+void RegisterId(Node *node)
+{
+	auto id = node->GetIdentifier();
+	if (StringToNode[id]) {
+		error("Id '%s' already registered.\n", id.c_str());
+	}
+	else {
+		info("Registering id '%s'.\n", id.c_str());
+		StringToNode[id] = node;
+	}
+}
+
 void ParameterNode::Evaluate()
 {
-	GetIdentifier(); // Register
+	RegisterId(this);
 }
 
 void ModuleNode::Evaluate()
 {
-	GetIdentifier(); // Register id
 	Statements->Evaluate();
 }
 
 void FunctionDeclNode::Evaluate()
 {
-	GetIdentifier(); // Register id
+	RegisterId(this);
 	Parameters->Evaluate();
 	Statements->Evaluate();
 }

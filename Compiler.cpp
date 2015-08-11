@@ -41,22 +41,6 @@ void ModuleNode::Compile()
 	Statements->Compile();
 }
 
-void IdentExpr::Compile()
-{
-	auto id = GetIdentifier();
-	auto node = StringToNode[id];
-	if (dynamic_cast<ParameterNode*>(node))
-	{
-		TargetRegister = ((ParameterNode*)node)->Register;
-		HasTargetRegister = true;
-		//TODO: this should not be set:
-		Target = RegisterStringMap[TargetRegister];
-	}
-	else {
-		Target = Name;
-	}
-}
-
 void PlusExpr::Compile()
 {
 	Rhs->Compile();
@@ -100,12 +84,11 @@ void PlusExpr::Compile()
 
 void FunctionCallStmt::Compile()
 {
+	Ident->Compile();
 	Parameters->Compile();
 
-	auto id = Ident->GetIdentifier();
-
 	// Find declaration
-	auto decl = StringToNode[id];
+	auto decl = Ident->GetReferenced();
 	if (dynamic_cast<FunctionDeclNode*>(decl)) {
 		auto decl_params = ((FunctionDeclNode*)decl)->Parameters;
 		if (decl_params->Children.size() != Parameters->Children.size()) {
@@ -114,27 +97,52 @@ void FunctionCallStmt::Compile()
 		else {
 			for (unsigned int i = 0; i < Parameters->Children.size(); i++) {
 				auto assign = new AssignStmt(decl_params->Children[i]->Register, Parameters->Children[i]);
+				assign->Parent = this;
 				assign->Compile();
 			}
 		}
+		write("\tcall\t%s\n", decl->GetIdentifier().c_str());
 	}
-	write("\tcall\t%s\n", id.c_str());
+	else {
+		write("\tcall\t%s\n", Ident->GetName().c_str());
+	}
+}
+
+void IdentExpr::Compile()
+{
+	auto name = GetName();
+	auto ref = GetReferenced();
+	if (NULL == ref) {
+		warn("Could not find id '%s'.\n", name.c_str());
+		Target = name;
+	}
+	else {
+		if (dynamic_cast<ParameterNode*>(ref)) {
+			TargetRegister = ((ParameterNode*)ref)->Register;
+			HasTargetRegister = true;
+			//TODO: this should not be set:
+			Target = RegisterStringMap[TargetRegister];
+		}
+		else {
+			Target = name;
+		}
+	}
 }
 
 void AssignStmt::Compile()
 {
+	Target->Compile();
 	Expr->Compile();
-	if (HasTargetRegister)
-	{
+
+	if (Target->HasTargetRegister) {
 		if (Expr->HasTargetRegister) {
-			WriteLoad(TargetRegister, Expr->TargetRegister);
+			WriteLoad(Target->TargetRegister, Expr->TargetRegister);
 		}
 		else {
-			WriteLoad(TargetRegister, Expr->Target);
+			WriteLoad(Target->TargetRegister, Expr->Target);
 		}
 	}
 	else {
-		// TODO: Look up
-		WriteDefine(Target, Expr->Target);
+		WriteDefine(Target->Name, Expr->Target);
 	}
 }
