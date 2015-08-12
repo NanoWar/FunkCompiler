@@ -20,6 +20,12 @@ void RegisterId(Node *node)
 	}
 }
 
+void IfStmt::Evaluate()
+{
+	TrueStmts->Evaluate();
+	FalseStmts->Evaluate();
+}
+
 void ParameterNode::Evaluate()
 {
 	RegisterId(this);

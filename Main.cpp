@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
 
 	if (yyin == stdin) {
-		print("Reading from console input...");
+		print("Reading from console input ...");
 		AddConsoleCtrlHandler();
 	}
 	else {
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 
 	// Parse
 	int yyparse_ret = yyparse();
-	info("--- PARSE COMPLETE: ret:%d ---\n", yyparse_ret);
+	info("Parsing completed.\n");
 
 	if (!yyparse_ret) {
 

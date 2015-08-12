@@ -36,8 +36,8 @@ extern StatementsNode *Program;
 
 %type <str> name
 %type <ident> ident
-%type <stmts> stmts program
-%type <stmt> stmt fn mod assign call
+%type <stmts> stmts program else
+%type <stmt> stmt fn mod assign call if
 %type <exprs> exprs
 %type <expr> expr
 %type <fn_params> fn_params
@@ -96,10 +96,11 @@ stmts
 ;
 
 stmt
-: fn				/*{ $$ = $<stmt>1; }*/
-| mod				/*{ $$ = $<stmt>1; }*/
+: fn
+| mod
 | assign
 | call
+| if
 ;
 
 fn
@@ -127,6 +128,14 @@ call
 : ident '(' exprs ')'		{ $$ = new FunctionCallStmt($<ident>1, $<exprs>3); }
 ;
 
+if
+: IF expr '{' stmts '}'	else	{ $$ = new IfStmt($<expr>2, $<stmts>4, $<stmts>6); }
+;
+
+else 
+: /* empty */					{ $$ = new StatementsNode(); }
+| ELSE '{' stmts '}'			{ $$ = $<stmts>3; }
+;
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -145,6 +154,7 @@ expr
 | tSTRING					{ $$ = new StringExpr(string(yytext)); }
 | reg						{ $$ = new RegisterExpr($<reg>1); }
 | expr '+' expr				{ $$ = new PlusExpr($<expr>1, $<expr>3); }
+| expr EQEQ expr			{ $$ = new CompareExpr($<expr>1, $<expr>3); }
 | '*' expr					{ $$ = new IndirectionExpr($<expr>2); }
 /*
 | expr '-' expr				{ $$ = mk_node("Minus", 2, $1, $3); }

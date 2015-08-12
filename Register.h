@@ -20,5 +20,6 @@ enum ERegister
 extern map<ERegister, string> RegisterStringMap;
 
 #define RSM(reg) RegisterStringMap[ERegister::##reg].c_str()
+#define RSMx(expr) RegisterStringMap[expr].c_str()
 
 #endif Register_h

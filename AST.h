@@ -9,7 +9,7 @@
 #include "StringBuffer.h"
 #include <typeinfo>
 
-void info (const char* format, ...);
+void info(const char* format, ...);
 
 class Node;
 
@@ -62,7 +62,7 @@ public:
 		va_list params;
 		va_start(params, n);
 		Children.reserve(Children.size() + n);
-		for(int i = 0; i < n; i++) {
+		for (int i = 0; i < n; i++) {
 			auto item = va_arg(params, ItemType *);
 			Extend(item);
 		}
@@ -73,7 +73,7 @@ public:
 	OwnType *Extend(vector<ItemType*> items)
 	{
 		Children.reserve(Children.size() + items.size());
-		for(int i = 0; i < items.size(); i++) {
+		for (int i = 0; i < items.size(); i++) {
 			auto item = items[i];
 			Extend(item);
 		}
@@ -82,7 +82,7 @@ public:
 };
 
 template<typename OwnType, typename ItemType, typename BaseType = Node>
-class ContainerNode : public VectorNode<OwnType, ItemType, BaseType>
+class ContainerNode : public VectorNode < OwnType, ItemType, BaseType >
 {
 public:
 	ContainerNode() { }
@@ -91,27 +91,27 @@ public:
 	OwnType *Extend(ItemType *node)
 	{
 		Children.push_back(node);
-		((Node *) node)->Parent = this;
+		((Node *)node)->Parent = this;
 		return(OwnType *) this;
 	}
 
 	void Evaluate()
 	{
-		for(auto child = Children.begin(); child != Children.end(); ++child) {
+		for (auto child = Children.begin(); child != Children.end(); ++child) {
 			(*child)->Evaluate();
 		}
 	}
 
 	void Compile()
 	{
-		for(auto child = Children.begin(); child != Children.end(); ++child) {
+		for (auto child = Children.begin(); child != Children.end(); ++child) {
 			(*child)->Compile();
 		}
 	}
 
 	~ContainerNode()
 	{
-		for(auto child = Children.begin(); child != Children.end(); ++child) {
+		for (auto child = Children.begin(); child != Children.end(); ++child) {
 			delete *child;
 		}
 	}
@@ -122,7 +122,7 @@ class StatementNode : public Node
 public:
 };
 
-class StatementsNode : public ContainerNode<StatementsNode, StatementNode>
+class StatementsNode : public ContainerNode < StatementsNode, StatementNode >
 {
 public:
 };
@@ -139,30 +139,30 @@ public:
 	int Value;
 
 	int Size;
-	
+
 	ExpressionNode()
 	{
 		HasTargetRegister = false;
 		HasStaticValue = false;
 		Size = 1;
 	}
-	
+
 	bool IsValid()
 	{
-		if(TargetRegister < REGISTER_BIG && Size == 1) return true;
-		if(TargetRegister >= REGISTER_BIG && Size == 2) return true;
+		if (TargetRegister < REGISTER_BIG && Size == 1) return true;
+		if (TargetRegister >= REGISTER_BIG && Size == 2) return true;
 		return false;
 	}
 
 	virtual void Compile() { }
 };
 
-class ExpressionsNode : public ContainerNode<ExpressionsNode, ExpressionNode>
+class ExpressionsNode : public ContainerNode < ExpressionsNode, ExpressionNode >
 {
 public:
 };
 
-class IdentExpr : public VectorNode<IdentExpr, string, ExpressionNode>
+class IdentExpr : public VectorNode < IdentExpr, string, ExpressionNode >
 {
 public:
 	IdentExpr(string ident)
@@ -184,7 +184,7 @@ public:
 		HasStaticValue = true;
 		int number = stoi(str);
 		Value = number;
-		if(number > 256 || number < -127)
+		if (number > 256 || number < -127)
 			Size = 2;
 		else
 			Size = 1;
@@ -198,7 +198,7 @@ public:
 	{
 		Size = chars.length();
 		HasStaticValue = true;
-		if(Size == 1)
+		if (Size == 1)
 			Value = chars[0];
 		else
 			Value = chars[1] * 256 + chars[0];
@@ -233,6 +233,29 @@ public:
 	}
 
 	~PlusExpr()
+	{
+		delete Lhs;
+		delete Rhs;
+	}
+
+	void Compile();
+};
+
+class CompareExpr : public ExpressionNode
+{
+public:
+	ExpressionNode *Lhs;
+	ExpressionNode *Rhs;
+
+	CompareExpr(ExpressionNode *lhs, ExpressionNode *rhs)
+		: Lhs(lhs), Rhs(rhs)
+	{
+		Size = 0;
+		Lhs->Parent = this;
+		Rhs->Parent = this;
+	}
+
+	~CompareExpr()
 	{
 		delete Lhs;
 		delete Rhs;
@@ -276,26 +299,26 @@ public:
 class AssignStmt : public StatementNode
 {
 public:
-	ExpressionNode *Target;
-	ExpressionNode *Expr;
+	ExpressionNode *Lhs;
+	ExpressionNode *Rhs;
 
-	AssignStmt(ERegister target, ExpressionNode *expr) : Expr(expr)
+	AssignStmt(ERegister reg, ExpressionNode *rhs) : Rhs(rhs)
 	{
-		Target = new RegisterExpr(target);
-		Target->Parent = this;
-		Expr->Parent = this;
+		Lhs = new RegisterExpr(reg);
+		Lhs->Parent = this;
+		Rhs->Parent = this;
 	}
 
-	AssignStmt(IdentExpr *ident, ExpressionNode *expr) : Target(ident), Expr(expr)
+	AssignStmt(IdentExpr *ident, ExpressionNode *rhs) : Lhs(ident), Rhs(rhs)
 	{
-		Target->Parent = this;
-		Expr->Parent = this;
+		Lhs->Parent = this;
+		Rhs->Parent = this;
 	}
 
 	~AssignStmt()
 	{
-		delete Target;
-		delete Expr;
+		delete Lhs;
+		delete Rhs;
 	}
 
 	void Compile();
@@ -318,7 +341,7 @@ public:
 	{
 		delete Statements;
 	}
-	
+
 	void Evaluate();
 	void Compile();
 };
@@ -335,7 +358,7 @@ public:
 	void Compile();
 };
 
-class ParametersNode : public ContainerNode<ParametersNode, ParameterNode>
+class ParametersNode : public ContainerNode < ParametersNode, ParameterNode >
 {
 public:
 };
@@ -345,7 +368,7 @@ class OutputNode : public Node
 public:
 };
 
-class OutputsNode : public ContainerNode<OutputsNode, OutputNode>
+class OutputsNode : public ContainerNode < OutputsNode, OutputNode >
 {
 public:
 };
@@ -356,7 +379,8 @@ public:
 	IdentExpr *Ident;
 	ExpressionsNode *Parameters;
 
-	FunctionCallStmt(IdentExpr *ident, ExpressionsNode *parameters) : Ident(ident), Parameters(parameters)
+	FunctionCallStmt(IdentExpr *ident, ExpressionsNode *parameters)
+		: Ident(ident), Parameters(parameters)
 	{
 		Ident->Parent = this;
 		Parameters->Parent = this;
@@ -376,13 +400,14 @@ public:
 	StatementsNode *Statements;
 
 	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements)
-		: Parameters(parameters), Statements(statements), StatementNode()
+		: Parameters(parameters), Statements(statements),
+		StatementNode()
 	{
 		Name = *name;
 		parameters->Parent = this;
 		statements->Parent = this;
 	}
-	
+
 	void Evaluate();
 	void Compile();
 
@@ -390,6 +415,32 @@ public:
 	{
 		delete Parameters;
 		delete Statements;
+	}
+};
+
+class IfStmt : public StatementNode
+{
+public:
+	ExpressionNode *Expr;
+	StatementsNode *TrueStmts;
+	StatementsNode *FalseStmts;
+
+	IfStmt(ExpressionNode *expr, StatementsNode *ifStmts, StatementsNode *elseStmts)
+		: Expr(expr), TrueStmts(ifStmts), FalseStmts(elseStmts),
+		StatementNode()
+	{
+		Expr->Parent = this;
+		TrueStmts->Parent = this;
+		FalseStmts->Parent = this;
+	}
+
+	void Evaluate();
+	void Compile();
+
+	~IfStmt()
+	{
+		delete TrueStmts;
+		delete FalseStmts;
 	}
 };
 

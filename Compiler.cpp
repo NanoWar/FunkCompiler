@@ -21,6 +21,71 @@ void FunctionDeclNode::Compile()
 	write("\tret\n\n");
 }
 
+void IfStmt::Compile()
+{
+	Expr->Compile();
+	if (Expr->HasStaticValue && Expr->Value > 0) {
+		// Always true => skip else
+	}
+	else if (Expr->HasTargetRegister) {
+		if (Expr->Size == 1) {
+			// Assign to a
+			WriteLoad(ERegister::A, Expr->TargetRegister);
+			write("\tor\ta\n");
+		}
+		else if (Expr->Size == 2){
+			// Assign to hl
+			WriteLoad(ERegister::HL, Expr->TargetRegister);
+			write("\tld\ta, h\n");
+			write("\tor\tl\n");
+		}
+	}
+
+	if (FalseStmts->HasChildren()) {
+		write("\tjp\tnz, __if_else\n");
+		TrueStmts->Compile();
+		write("\tjp\t__if_end\n");
+		write("__if_else\n");
+		FalseStmts->Compile();
+		write("__if_end\n");
+	}
+	else {
+		write("\tjp\tnz, __if_end\n");
+		TrueStmts->Compile();
+		write("__if_end\n");
+	}
+}
+
+void CompareExpr::Compile()
+{
+	if (Lhs->HasStaticValue && Rhs->HasStaticValue) {
+		if (Lhs->Value == Rhs->Value) {
+			warn("Comparison is always true.\n");
+			HasStaticValue = true;
+			Value = 1;
+		}
+		else {
+			warn("Comparison is always false.\n");
+			HasStaticValue = true;
+			Value = 0;
+		}
+	}
+	else {
+		Lhs->Compile();
+		if (Lhs->HasTargetRegister && Lhs->TargetRegister == ERegister::HL) {
+			write("\tpush\thl\n");
+		}
+		Rhs->Compile();
+		// TODO
+
+		if (Lhs->HasTargetRegister) {
+			// Assign LHS to a
+			WriteLoad(ERegister::A, Lhs->TargetRegister);
+			write("\tcp\t%s\n", Rhs->Target.c_str());
+		}
+	}
+}
+
 void ParameterNode::Compile()
 {
 	write(";  %s = %s\n", RegisterStringMap[Register].c_str(), Name.c_str());
@@ -131,18 +196,24 @@ void IdentExpr::Compile()
 
 void AssignStmt::Compile()
 {
-	Target->Compile();
-	Expr->Compile();
+	Lhs->Compile();
+	Rhs->Compile();
 
-	if (Target->HasTargetRegister) {
-		if (Expr->HasTargetRegister) {
-			WriteLoad(Target->TargetRegister, Expr->TargetRegister);
+	if (Lhs->HasTargetRegister) {
+		if (Rhs->HasTargetRegister) {
+			WriteLoad(Lhs->TargetRegister, Rhs->TargetRegister);
 		}
 		else {
-			WriteLoad(Target->TargetRegister, Expr->Target);
+			// Optimize "ld a, 0" => "xor a"
+			if (Lhs->TargetRegister == ERegister::A && Rhs->Value == 0) {
+				write("\txor\ta\n");
+			}
+			else {
+				WriteLoad(Lhs->TargetRegister, Rhs->Target);
+			}
 		}
 	}
 	else {
-		WriteDefine(Target->Name, Expr->Target);
+		WriteDefine(Lhs->Name, Rhs->Target);
 	}
 }
