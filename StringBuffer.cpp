@@ -27,6 +27,9 @@ string AddString(string str)
 
 void CompileCurrentStrings()
 {
+	if (CurrentStrings.size() == 0) {
+		return;
+	}
 	write("\n;==============================\n; Strings for page %d\n;==============================\n\n", CurrentPage);
 	for (auto it = CurrentStrings.begin(); it != CurrentStrings.end(); ++it) {
 		write("%s: .db \"%s\", 0\n", it->second.c_str(), it->first.c_str());

@@ -13,6 +13,7 @@ char *tmp_file;
 int verbose = 0;
 int quiet = 0;
 int tree = 0;
+int repl = 0;
 int errors = 0;
 FILE *output_file = stdout;
 
@@ -21,52 +22,52 @@ int main(int argc, char **argv)
 	SaveConsoleAttributes();
 
 	int expect_input_string = 0;
-	int expect_input_file = 0;
-	int expect_output_file = 0;
+	int expect_input_file = 1;
+	int expect_output_file = 1;
 
-	for (int i = 1; i < argc; i++) {
-		if (expect_input_string) {
+	for (int i = 1; i < argc; i++)
+	{
+		if (expect_input_string)
+		{
 			expect_input_string = 0;
-			tmp_file = "_tmp";
+			tmp_file = "__tmp";
 			auto f = fopen(tmp_file, "w+");
 			fwrite(argv[i], sizeof(char), strlen(argv[i]), f);
 			fclose(f);
 			yyin = fopen(tmp_file, "r");
 		}
 
-		if (expect_input_file) {
+		// -v Verbose
+		else if (strcmp(argv[i], "-v") == 0) verbose = 1;
+
+		// -q Quiet
+		else if (strcmp(argv[i], "-q") == 0) quiet = 1;
+
+		// -d Debug
+		else if (strcmp(argv[i], "-d") == 0) yydebug = 1;
+
+		// -t Tree
+		else if (strcmp(argv[i], "-t") == 0) tree = 1;
+
+		// -r REPL
+		else if (strcmp(argv[i], "-r") == 0) repl = 1;
+
+		// -x Execute
+		else if (strcmp(argv[i], "-x") == 0) expect_input_string = 1;
+
+		// Input file
+		else if (expect_input_file) {
 			expect_input_file = 0;
 			yyin = fopen(argv[i], "r");
 			if (!yyin) { cerr << "Error: Could not open input file <" << argv[i] << ">" << endl; return -1; }
 		}
 
-		if (expect_output_file) {
+		// Output file
+		else if (expect_output_file) {
 			expect_output_file = 0;
 			output_file = fopen(argv[i], "w+");
 			if (!output_file) { cerr << "Error: Could not create output file <" << argv[i] << ">" << endl; return -1; }
 		}
-
-		// -v Verbose
-		if (strcmp(argv[i], "-v") == 0) verbose = 1;
-
-		// -q Quiet
-		if (strcmp(argv[i], "-q") == 0) quiet = 1;
-
-		// -d Debug
-		if (strcmp(argv[i], "-d") == 0) yydebug = 1;
-
-		// -t Tree
-		if (strcmp(argv[i], "-t") == 0) tree = 1;
-
-		// -x Execute
-		if (strcmp(argv[i], "-x") == 0) expect_input_string = 1;
-
-		// -i Input file
-		if (strcmp(argv[i], "-i") == 0) expect_input_file = 1;
-
-		// -o Output file
-		if (strcmp(argv[i], "-o") == 0) expect_output_file = 1;
-
 	}
 
 	if (!quiet) {
@@ -77,20 +78,18 @@ int main(int argc, char **argv)
 
 	if (argc == 1) {
 		// Display usage
-		cout << endl << "Usage:" << endl;
+		cout << endl << "Usage: <input file> <output file> -[vqdtrx]" << endl;
 		cout << "  -v          " << "Verbose mode (shows additional output)" << endl;
 		cout << "  -q          " << "Quiet mode (supresses all console output)" << endl;
 		cout << "  -d          " << "Debug mode (shows debug messages)" << endl;
 		cout << "  -t          " << "Tree (shows parse tree)" << endl;
+		cout << "  -r          " << "REPL mode" << endl;
 		cout << "  -x <string> " << "Execute string" << endl;
-		cout << "  -i <file>   " << "Input file" << endl;
-		cout << "  -o <file>   " << "Output file" << endl;
 		return 0;
 	}
 
-
-	if (yyin == stdin) {
-		print("Reading from console input ...");
+	if (repl) {
+		print("Reading from console input ...\n");
 		AddConsoleCtrlHandler();
 	}
 	else {
