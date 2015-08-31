@@ -20,6 +20,13 @@ void RegisterId(Node *node)
 	}
 }
 
+void AssignStmt::Evaluate()
+{
+	if(!Lhs->HasTargetRegister) {
+		RegisterId(Lhs);
+	}
+}
+
 void IfStmt::Evaluate()
 {
 	TrueStmts->Evaluate();

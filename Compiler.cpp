@@ -157,7 +157,7 @@ void FunctionCallStmt::Compile()
 	if (dynamic_cast<FunctionDeclNode*>(decl)) {
 		auto decl_params = ((FunctionDeclNode*)decl)->Parameters;
 		if (decl_params->Children.size() != Parameters->Children.size()) {
-			warn("Parameter mismatch.\n");
+			warn("Parameter mismatch of function %s.\n", decl->GetIdentifier().c_str());
 		}
 		else {
 			for (unsigned int i = 0; i < Parameters->Children.size(); i++) {
@@ -207,13 +207,16 @@ void AssignStmt::Compile()
 			// Optimize "ld a, 0" => "xor a"
 			if (Lhs->TargetRegister == ERegister::A && Rhs->Value == 0) {
 				write("\txor\ta\n");
-			}
-			else {
-				WriteLoad(Lhs->TargetRegister, Rhs->Target);
+			} else {
+				if(Rhs->Name.empty()) {
+					WriteLoad(Lhs->TargetRegister, Rhs->Target);
+				} else {
+					WriteLoad(Lhs->TargetRegister, Rhs->GetIdentifier());
+				}
 			}
 		}
 	}
 	else {
-		WriteDefine(Lhs->Name, Rhs->Target);
+		WriteDefine(Lhs->GetIdentifier(), Rhs->Target);
 	}
 }

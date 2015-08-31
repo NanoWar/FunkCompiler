@@ -16,6 +16,7 @@ void write(const char* format, ...)
 	va_end(args);
 }
 
+// ld reg, reg
 void WriteLoad(ERegister target, ERegister source)
 {
 	if (target == source) {
@@ -44,6 +45,7 @@ void WriteLoad(ERegister target, ERegister source)
 	}
 }
 
+// ld reg, name
 void WriteLoad(ERegister target, string value)
 {
 	write(S_LOAD,
@@ -51,6 +53,7 @@ void WriteLoad(ERegister target, string value)
 		value.c_str());
 }
 
+// #define name name
 void WriteDefine(string target, string value)
 {
 	write(S_DEFINE,
@@ -58,6 +61,7 @@ void WriteDefine(string target, string value)
 		value.c_str());
 }
 
+// Register alias: #define name reg
 void WriteDefine(string target, ERegister source)
 {
 	write(S_DEFINE,

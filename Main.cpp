@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 
 	if (argc == 1) {
 		// Display usage
-		cout << endl << "Usage: <input file> <output file> -[vqdtrx]" << endl;
+		cout << endl << "Usage: [options] <input file> <output file>" << endl;
 		cout << "  -v          " << "Verbose mode (shows additional output)" << endl;
 		cout << "  -q          " << "Quiet mode (supresses all console output)" << endl;
 		cout << "  -d          " << "Debug mode (shows debug messages)" << endl;

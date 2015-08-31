@@ -322,6 +322,7 @@ public:
 	}
 
 	void Compile();
+	void Evaluate();
 };
 
 

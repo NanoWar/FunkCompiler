@@ -19,16 +19,16 @@ extern StatementsNode *Program;
  void *unknown;
  int token;
  string *str;
+ ExpressionsNode *exprs;
+ ExpressionNode *expr;
+ ERegister reg;
  IdentExpr *ident;
  StatementsNode *stmts;
  StatementNode *stmt;
- ExpressionsNode *exprs;
- ExpressionNode *expr;
- ParametersNode *fn_params;
- ParameterNode *fn_param;
- FunctionDeclNode *fn;
  ModuleNode *mod;
- ERegister reg;
+ FunctionDeclNode *fn_decl;
+ ParametersNode *fn_decl_params;
+ ParameterNode *fn_decl_param;
 }
 
 %debug
@@ -37,11 +37,11 @@ extern StatementsNode *Program;
 %type <str> name
 %type <ident> ident
 %type <stmts> stmts program else
-%type <stmt> stmt fn mod assign call if
+%type <stmt> stmt mod fn_decl fn_call assign if
 %type <exprs> exprs
 %type <expr> expr
-%type <fn_params> fn_params
-%type <fn_param> fn_param
+%type <fn_params> fn_decl_params
+%type <fn_param> fn_decl_param
 %type <reg> reg
 
 
@@ -96,36 +96,42 @@ stmts
 ;
 
 stmt
-: fn
-| mod
+: mod
+| inc
+| fn_decl
+| fn_call
 | assign
-| call
 | if
-;
-
-fn
-: FN name '(' fn_params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_params>4, $<stmts>7); delete $2;}
-;
-fn_params
-: /* empty */				{ $$ = new ParametersNode(); }
-| fn_param					{ $$ = new ParametersNode(); $$->Extend($<fn_param>1); }
-| fn_params ',' fn_param	{ $$ = $<fn_params>1->Extend($<fn_param>3); }
-;
-fn_param
-: name ':' reg				{ $$ = new ParameterNode($<str>1, $<reg>3); delete $1; }
 ;
 
 mod
 : MOD name '{' stmts '}'	{ $$ = new ModuleNode($<str>2, $<stmts>4); delete $2; }
 ;
 
+inc
+: INC name					{ $$ = new IncludeNode($<str>2); delete $2; }
+| INC tSTRING				{ $$ = new IncludeNode(string(yytext)); }
+;
+
+fn_decl
+: FN name '(' fn_decl_params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_decl_params>4, $<stmts>7); delete $2;}
+;
+fn_decl_params
+: /* empty */				        { $$ = new ParametersNode(); }
+| fn_decl_params					{ $$ = new ParametersNode(); $$->Extend($<fn_param>1); }
+| fn_decl_params ',' fn_decl_params	{ $$ = $<fn_params>1->Extend($<fn_param>3); }
+;
+fn_decl_param
+: name ':' reg				{ $$ = new ParameterNode($<str>1, $<reg>3); delete $1; }
+;
+
+fn_call
+: ident '(' exprs ')'		{ $$ = new FunctionCallStmt($<ident>1, $<exprs>3); }
+;
+
 assign
 : reg '=' expr				{ $$ = new AssignStmt($<reg>1, $<expr>3); }
 | ident '=' expr			{ $$ = new AssignStmt($<ident>1, $<expr>3); }
-;
-
-call
-: ident '(' exprs ')'		{ $$ = new FunctionCallStmt($<ident>1, $<exprs>3); }
 ;
 
 if
