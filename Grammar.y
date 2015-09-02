@@ -40,8 +40,8 @@ extern StatementsNode *Program;
 %type <stmt> stmt mod fn_decl fn_call assign if
 %type <exprs> exprs
 %type <expr> expr
-%type <fn_params> fn_decl_params
-%type <fn_param> fn_decl_param
+%type <fn_decl_params> fn_decl_params
+%type <fn_decl_param> fn_decl_param
 %type <reg> reg
 
 
@@ -59,7 +59,7 @@ extern StatementsNode *Program;
 
 // Keywords
 %token <token> LET IF ELIF ELSE MATCH LOOP END RETURN
-%token <token> FN MOD ENUM STRUCT
+%token <token> MOD FN ENUM STRUCT
 %token <token> tTRUE tFALSE
 
 // Types
@@ -97,7 +97,6 @@ stmts
 
 stmt
 : mod
-| inc
 | fn_decl
 | fn_call
 | assign
@@ -108,18 +107,13 @@ mod
 : MOD name '{' stmts '}'	{ $$ = new ModuleNode($<str>2, $<stmts>4); delete $2; }
 ;
 
-inc
-: INC name					{ $$ = new IncludeNode($<str>2); delete $2; }
-| INC tSTRING				{ $$ = new IncludeNode(string(yytext)); }
-;
-
 fn_decl
 : FN name '(' fn_decl_params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_decl_params>4, $<stmts>7); delete $2;}
 ;
 fn_decl_params
 : /* empty */				        { $$ = new ParametersNode(); }
-| fn_decl_params					{ $$ = new ParametersNode(); $$->Extend($<fn_param>1); }
-| fn_decl_params ',' fn_decl_params	{ $$ = $<fn_params>1->Extend($<fn_param>3); }
+| fn_decl_param						{ $$ = new ParametersNode(); $$->Extend($<fn_decl_param>1); }
+| fn_decl_params ',' fn_decl_param	{ $$ = $<fn_decl_params>1->Extend($<fn_decl_param>3); }
 ;
 fn_decl_param
 : name ':' reg				{ $$ = new ParameterNode($<str>1, $<reg>3); delete $1; }

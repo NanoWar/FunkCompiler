@@ -13,6 +13,7 @@ void write(const char* format, ...);
 
 void WriteLoad(ERegister target, ERegister source);
 void WriteLoad(ERegister target, string value);
+void WriteLoad(ERegister target, int value);
 
 void WriteDefine(string target, string value);
 void WriteDefine(string target, ERegister source);

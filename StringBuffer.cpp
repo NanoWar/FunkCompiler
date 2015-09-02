@@ -10,8 +10,9 @@ int StringCount = 0;
 
 void Check()
 {
-	if (PagedStrings.size() <= CurrentPage)
+	if (PagedStrings.size() <= CurrentPage) {
 		PagedStrings.push_back(CurrentStrings);
+	}
 }
 
 string AddString(string str)

@@ -30,14 +30,18 @@ namespace Console
 }
 #endif WIN32
 
+void trace(const char* format, ...);
 void info(const char* format, ...);
 void warn(const char* format, ...);
 void error(const char* format, ...);
+void fatal(const char* format, ...);
+
 void print(const char* format, ...);
+void println(const char* format, ...);
 
 void SaveConsoleAttributes();
 void RestoreConsoleAttributes();
-void SetConsoleAttributes();
+void SetConsoleAttributes(unsigned short attr);
 
 void AddConsoleCtrlHandler();
 

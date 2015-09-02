@@ -38,7 +38,6 @@ string IdentExpr::GetName()
 	return name;
 }
 
-
 Node *IdentExpr::GetReferenced()
 {
 	// Build own name and copy

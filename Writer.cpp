@@ -53,6 +53,14 @@ void WriteLoad(ERegister target, string value)
 		value.c_str());
 }
 
+// ld reg, num
+void WriteLoad(ERegister target, int value)
+{
+	write(S_LOAD,
+		RSMx(target),
+		to_string(value).c_str());
+}
+
 // #define name name
 void WriteDefine(string target, string value)
 {

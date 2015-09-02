@@ -51,6 +51,9 @@
     <ClCompile Include="Evaluator.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="Definitions.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Flex Include="Lexer.l">
@@ -88,6 +91,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="Writer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Definitions.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

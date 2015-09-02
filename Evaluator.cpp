@@ -12,10 +12,10 @@ void RegisterId(Node *node)
 {
 	auto id = node->GetIdentifier();
 	if (StringToNode[id]) {
-		error("Id '%s' already registered.\n", id.c_str());
+		error("Id <%s> is already registered\n", id.c_str());
 	}
 	else {
-		info("Registering id '%s'.\n", id.c_str());
+		trace("Registering id <%s>\n", id.c_str());
 		StringToNode[id] = node;
 	}
 }

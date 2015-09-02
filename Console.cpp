@@ -10,8 +10,10 @@ WORD user_attributes;
 
 #endif WIN32
 
-extern int quiet;
 extern int verbose;
+extern int quiet;
+extern int errors;
+extern int no_colors;
 
 int const indent_step = 2;
 
@@ -32,6 +34,7 @@ void SaveConsoleAttributes() {
 }
 
 void SetConsoleAttributes(unsigned short attr) {
+	if(no_colors) return;
 #ifdef WIN32
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (WORD)attr);
 #elif !defined(MACVER)
@@ -40,46 +43,83 @@ void SetConsoleAttributes(unsigned short attr) {
 }
 
 // Only in verbose mode
-void info(const char* format, ...) {
-	va_list args;
-	va_start(args, format);
+void trace(const char* format, ...) {
 	if (!quiet && verbose) {
-		SetConsoleAttributes(Console::GREEN);
+		SetConsoleAttributes(Console::DARKGRAY);
+		va_list args;
+		va_start(args, format);
 		vprintf(format, args);
+		va_end(args);
 		RestoreConsoleAttributes();
 	}
-	va_end(args);
+}
+
+void info(const char* format, ...) {
+	if (!quiet) {
+		SetConsoleAttributes(Console::WHITE);
+		va_list args;
+		va_start(args, format);
+		vprintf(format, args);
+		va_end(args);
+		RestoreConsoleAttributes();
+	}
 }
 
 void warn(const char* format, ...) {
-	va_list args;
-	va_start(args, format);
 	if (!quiet) {
 		SetConsoleAttributes(Console::YELLOW);
+		printf("Warning: ");
+		va_list args;
+		va_start(args, format);
 		vprintf(format, args);
+		va_end(args);
 		RestoreConsoleAttributes();
 	}
-	va_end(args);
 }
 
 void error(const char* format, ...) {
-	va_list args;
-	va_start(args, format);
+	errors++;
 	if (!quiet) {
 		SetConsoleAttributes(Console::RED);
+		printf("Error: ");
+		va_list args;
+		va_start(args, format);
 		vprintf(format, args);
+		va_end(args);
 		RestoreConsoleAttributes();
 	}
-	va_end(args);
+}
+
+void fatal(const char* format, ...) {
+	errors++;
+	if (!quiet) {
+		SetConsoleAttributes(Console::MAGENTA);
+		printf("Fatal: ");
+		va_list args;
+		va_start(args, format);
+		vprintf(format, args);
+		va_end(args);
+		RestoreConsoleAttributes();
+	}
 }
 
 void print(const char* format, ...) {
-	va_list args;
-	va_start(args, format);
 	if (!quiet) {
+		va_list args;
+		va_start(args, format);
 		vprintf(format, args);
+		va_end(args);
 	}
-	va_end(args);
+}
+
+void println(const char* format, ...) {
+	if (!quiet) {
+		va_list args;
+		va_start(args, format);
+		vprintf(format, args);
+		va_end(args);
+		printf("\n");
+	}
 }
 
 void print_indent(int depth) {

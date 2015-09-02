@@ -65,3 +65,9 @@ const char *join (vector<const char *> strings, const char *delimiter)
 	*(ptr-delimiter_len) = '\0';
 	return result;
 }
+
+bool endsWith(string const &fullString, string const &ending)
+{
+    if (fullString.length() < ending.length()) return false;
+	return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+}

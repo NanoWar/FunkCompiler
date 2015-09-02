@@ -8,14 +8,15 @@ extern int compile(Node *n);
 
 StatementsNode *Program;
 
-char *tmp_file;
-
 int verbose = 0;
 int quiet = 0;
 int tree = 0;
 int repl = 0;
-int errors = 0;
+int no_colors = 0;
+
+char *tmp_file;
 FILE *output_file = stdout;
+int errors = 0;
 
 int main(int argc, char **argv)
 {
@@ -49,57 +50,61 @@ int main(int argc, char **argv)
 		// -t Tree
 		else if (strcmp(argv[i], "-t") == 0) tree = 1;
 
-		// -r REPL
-		else if (strcmp(argv[i], "-r") == 0) repl = 1;
+		// -a Interactive
+		else if (strcmp(argv[i], "-a") == 0) repl = 1;
 
 		// -x Execute
 		else if (strcmp(argv[i], "-x") == 0) expect_input_string = 1;
+
+		// -n No colors
+		else if (strcmp(argv[i], "-n") == 0) no_colors = 1;
 
 		// Input file
 		else if (expect_input_file) {
 			expect_input_file = 0;
 			yyin = fopen(argv[i], "r");
-			if (!yyin) { cerr << "Error: Could not open input file <" << argv[i] << ">" << endl; return -1; }
+			if (!yyin) { error("Could not open input file <%s>.\n", argv[i]); return -1; }
 		}
 
 		// Output file
 		else if (expect_output_file) {
 			expect_output_file = 0;
 			output_file = fopen(argv[i], "w+");
-			if (!output_file) { cerr << "Error: Could not create output file <" << argv[i] << ">" << endl; return -1; }
+			if (!output_file) { error("Could not create output file <%s>.\n", argv[i]); return -1; }
 		}
 	}
-
-	if (!quiet) {
-		cout << "FunkCompiler by Robert Kuhfss" << endl;
-		if (verbose) cout << "-> verbose mode" << endl;
-		if (yydebug) cout << "-> debug mode" << endl;
-	}
+	
+	SetConsoleAttributes(Console::WHITE);
+	println("FunkCompiler by Robert Kuhfss");
+	if (verbose) println("-> verbose mode");
+	if (yydebug) println("-> debug mode");
+	RestoreConsoleAttributes();
 
 	if (argc == 1) {
 		// Display usage
-		cout << endl << "Usage: [options] <input file> <output file>" << endl;
-		cout << "  -v          " << "Verbose mode (shows additional output)" << endl;
-		cout << "  -q          " << "Quiet mode (supresses all console output)" << endl;
-		cout << "  -d          " << "Debug mode (shows debug messages)" << endl;
-		cout << "  -t          " << "Tree (shows parse tree)" << endl;
-		cout << "  -r          " << "REPL mode" << endl;
-		cout << "  -x <string> " << "Execute string" << endl;
+		println("\nUsage: [options] <input file> <output file>");
+		println("  -v         Verbose mode (show additional output)");
+		println("  -q         Quiet mode (supress all console output)");
+		println("  -x <code>  Execute code directly");
+		println("  -n         No colored console output");
+		println("  -a         Interactive mode");
+		println("  -d         Debug mode (show debug messages)");
+		println("  -t         Show parse tree");
 		return 0;
 	}
 
 	if (repl) {
-		print("Reading from console input ...\n");
+		trace("Reading from console input ...\n");
 		AddConsoleCtrlHandler();
 	}
 	else {
-		print("Parsing input ...\n");
+		trace("Parsing input ...\n");
 	}
 
 
 	// Parse
 	int yyparse_ret = yyparse();
-	info("Parsing completed.\n");
+	trace("Parsing completed.\n");
 
 	if (!yyparse_ret) {
 
@@ -124,8 +129,14 @@ int main(int argc, char **argv)
 		remove(tmp_file);
 	}
 
-	if (errors) print("There where errors.\n");
-	else print("Success!\n");
+	if (errors) {
+		SetConsoleAttributes(Console::RED);
+		print("There were errors.\n");
+	}
+	else {
+		SetConsoleAttributes(Console::GREEN);
+		print("Success!\n");
+	}
 
 	RestoreConsoleAttributes();
 	return yyparse_ret;

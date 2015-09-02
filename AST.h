@@ -9,7 +9,8 @@
 #include "StringBuffer.h"
 #include <typeinfo>
 
-void info(const char* format, ...);
+// Prevent compiler error...
+void trace(const char* format, ...);
 
 class Node;
 
@@ -215,6 +216,7 @@ public:
 	{
 		Size = 2;
 	}
+
 	void Compile() { Target = Name; }
 };
 
@@ -269,7 +271,8 @@ class IndirectionExpr : public ExpressionNode
 public:
 	ExpressionNode *Expr;
 
-	IndirectionExpr(ExpressionNode *expr) : Expr(expr)
+	IndirectionExpr(ExpressionNode *expr)
+		: Expr(expr)
 	{
 		expr->Parent = this;
 		Size = 1;
@@ -292,7 +295,8 @@ public:
 		HasTargetRegister = true;
 		TargetRegister = reg;
 		Target = RegisterStringMap[reg];
-		//info("Register %s in line %d\n", Target.c_str(), SourceLine);
+		Size = IS_SMALL(reg) ? 1 : 2;
+		//trace("Register %s in line %d\n", Target.c_str(), SourceLine);
 	}
 };
 
@@ -302,14 +306,16 @@ public:
 	ExpressionNode *Lhs;
 	ExpressionNode *Rhs;
 
-	AssignStmt(ERegister reg, ExpressionNode *rhs) : Rhs(rhs)
+	AssignStmt(ERegister reg, ExpressionNode *rhs)
+		: Rhs(rhs)
 	{
 		Lhs = new RegisterExpr(reg);
 		Lhs->Parent = this;
 		Rhs->Parent = this;
 	}
 
-	AssignStmt(IdentExpr *ident, ExpressionNode *rhs) : Lhs(ident), Rhs(rhs)
+	AssignStmt(IdentExpr *ident, ExpressionNode *rhs)
+		: Lhs(ident), Rhs(rhs)
 	{
 		Lhs->Parent = this;
 		Rhs->Parent = this;
@@ -331,11 +337,13 @@ class ModuleNode : public StatementNode
 public:
 	StatementsNode *Statements;
 
-	ModuleNode(string *name, StatementsNode *statements) : Statements(statements), StatementNode()
+	ModuleNode(string *name, StatementsNode *statements)
+		: Statements(statements),
+		StatementNode()
 	{
 		Name = *name;
 		statements->Parent = this;
-		info("Module %s in line %d\n", Name.c_str(), SourceLine);
+		trace("Module %s in line %d\n", Name.c_str(), SourceLine);
 	}
 
 	~ModuleNode()
@@ -351,10 +359,13 @@ class ParameterNode : public Node
 {
 public:
 	ERegister Register;
-	ParameterNode(string *name, ERegister reg) : Register(reg)
+
+	ParameterNode(string *name, ERegister reg)
+		: Register(reg)
 	{
 		Name = *name;
 	}
+
 	void Evaluate();
 	void Compile();
 };
@@ -386,11 +397,13 @@ public:
 		Ident->Parent = this;
 		Parameters->Parent = this;
 	}
+	
 	~FunctionCallStmt()
 	{
 		delete Ident;
 		delete Parameters;
 	}
+
 	void Compile();
 };
 
@@ -409,14 +422,14 @@ public:
 		statements->Parent = this;
 	}
 
-	void Evaluate();
-	void Compile();
-
 	~FunctionDeclNode()
 	{
 		delete Parameters;
 		delete Statements;
 	}
+
+	void Evaluate();
+	void Compile();
 };
 
 class IfStmt : public StatementNode
@@ -435,14 +448,14 @@ public:
 		FalseStmts->Parent = this;
 	}
 
-	void Evaluate();
-	void Compile();
-
 	~IfStmt()
 	{
 		delete TrueStmts;
 		delete FalseStmts;
 	}
+
+	void Evaluate();
+	void Compile();
 };
 
 

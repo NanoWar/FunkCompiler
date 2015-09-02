@@ -4,6 +4,7 @@ using namespace std;
 #define YY_DECL extern "C" int yylex()
 #include "AST.h"
 #include "Register.h"
+#include "Console.h"
 #include "Grammar.tab.h"
 
 #define YY_USER_ACTION \
@@ -26,21 +27,10 @@ using namespace std;
 %option yylineno
 
 %x str
-%x rawstr
-%x rawstr_esc_begin
-%x rawstr_esc_body
-%x rawstr_esc_end
-%x byte
-%x bytestr
-%x rawbytestr
-%x rawbytestr_nohash
-%x pound
-%x shebang_or_attr
 %x chars
 %x linecomment
-%x doc_line
 %x blockcomment
-%x doc_block
+%x include
 %x suffix
 
 name [a-zA-Z\x80-\xff_][a-zA-Z0-9\x80-\xff_]*[\!\?]?
@@ -60,14 +50,22 @@ name [a-zA-Z\x80-\xff_][a-zA-Z0-9\x80-\xff_]*[\!\?]?
 <linecomment>\n			{ BEGIN(INITIAL); }
 <linecomment>[^\n]*		{ }
 
+inc						{ BEGIN(include); }
+<include>[ \t\x22]*		{ yytext += yyleng; }
+<include>[^ \t\n\r\x22][^\t\n\r]*\x22? {
+	if(*(yytext+yyleng-1) == '\x22') *(yytext+yyleng-1) = '\0';
+	trace("Including file <%s>\n", yytext);
+	yyin = fopen(yytext, "r");
+	if (!yyin) { error("Could not open input file <%s>\n", yytext); }
+	yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+	BEGIN(INITIAL);
+}
+
  /* Keywords */
-let 		{ return LET; }
 if 			{ return IF; }
 elif		{ return ELIF; }
 else 		{ return ELSE; }
-match 		{ return MATCH; }
 loop 		{ return LOOP; }
-end			{ return END; }
 return 		{ return RETURN; }
 
 fn 			{ return FN; }
@@ -82,9 +80,6 @@ false 		{ return tFALSE; }
 byte		{ return tBYTE; }
 word		{ return tWORD; }
 bool		{ return tBOOL; }
-reg			{ return REG8; }
-reg8		{ return REG8; }
-reg16		{ return REG16; }
 
  /* Registers */
 a			{ return REG_A; }
@@ -116,10 +111,26 @@ af'			{ return REG_AFS; }
 0b[01_]+		{ BEGIN(suffix); return tINTEGER; }
 [0-9][0-9_]*	{ BEGIN(suffix); return tINTEGER; }
 
+\x27							{ BEGIN(chars); yymore(); yytext++; }
+<chars>\x27						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return tCHARS; }
+<chars><<EOF>>					{ return -1; }
+<chars>\\[n\nrt\\\x27\x220]		{ yymore(); }
+<chars>\\x[0-9a-fA-F]{2}		{ yymore(); }
+<chars>\\u\{[0-9a-fA-F]?{6}\}	{ yymore(); }
+<chars>\\[^n\nrt\\\x27\x220]	{ return -1; }
+<chars>(.|\n)					{ yymore(); }
+
+\x22							{ BEGIN(str); yymore(); yytext++; }
+<str>\x22						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return tSTRING; }
+<str><<EOF>>					{ return -1; }
+<str>\\[n\nrt\\\x27\x220]		{ yymore(); }
+<str>\\x[0-9a-fA-F]{2}			{ yymore(); }
+<str>\\u\{[0-9a-fA-F]?{6}\}		{ yymore(); }
+<str>\\[^n\nrt\\\x27\x220]		{ return -1; }
+<str>(.|\n)						{ yymore(); }
+
 ;		{ return ';'; }
 ,		{ return ','; }
-\.\.\.	{ return DOTDOTDOT; }
-\.\.	{ return DOTDOT; }
 \.		{ return '.'; }
 \(		{ return '('; }
 \)		{ return ')'; }
@@ -127,8 +138,8 @@ af'			{ return REG_AFS; }
 \}		{ return '}'; }
 \[		{ return '['; }
 \]		{ return ']'; }
-@		{ return '@'; }
-#		{ return '#'; }
+\@		{ return '@'; }
+\#		{ return '#'; }
 
 \~ 		{ return '~'; }
 :: 		{ return MOD_SEP; }
@@ -148,26 +159,6 @@ af'			{ return REG_AFS; }
 \>\> 	{ return SHR; }
 \>\>= 	{ return SHREQ; }
 \> 		{ return '>'; }
-
- /* CHARS */
-\x27							{ BEGIN(chars); yymore(); yytext++; }
-<chars>\x27						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return tCHARS; }
-<chars><<EOF>>					{ return -1; }
-<chars>\\[n\nrt\\\x27\x220]		{ yymore(); }
-<chars>\\x[0-9a-fA-F]{2}		{ yymore(); }
-<chars>\\u\{[0-9a-fA-F]?{6}\}	{ yymore(); }
-<chars>\\[^n\nrt\\\x27\x220]	{ return -1; }
-<chars>(.|\n)					{ yymore(); }
-
- /* STRING */
-\x22							{ BEGIN(str); yymore(); yytext++; }
-<str>\x22						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return tSTRING; }
-<str><<EOF>>					{ return -1; }
-<str>\\[n\nrt\\\x27\x220]		{ yymore(); }
-<str>\\x[0-9a-fA-F]{2}			{ yymore(); }
-<str>\\u\{[0-9a-fA-F]?{6}\}		{ yymore(); }
-<str>\\[^n\nrt\\\x27\x220]		{ return -1; }
-<str>(.|\n)						{ yymore(); }
 
 -\>		{ return RARROW; }
 -		{ return '-'; }
@@ -190,6 +181,13 @@ af'			{ return REG_AFS; }
 \^=		{ return CARETEQ; }
 %		{ return '%'; }
 %=		{ return PERCENTEQ; }
-<<EOF>> { return 0; }
+
+<<EOF>> {
+	yypop_buffer_state();
+	if (!YY_CURRENT_BUFFER) {
+		yyterminate();
+		return 0;
+	}
+}
 
 %%

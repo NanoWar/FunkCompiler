@@ -7,10 +7,11 @@
 #include "StringHelper.h"
 #include "StringBuffer.h"
 #include "Writer.h"
+#include "Definitions.h"
 
 void FunctionDeclNode::Compile()
 {
-	info("%d: Compiling function %s\n", SourceLine, GetIdentifier().c_str());
+	trace("Line %d: Compiling function <%s>\n", SourceLine, GetIdentifier().c_str());
 	//write("\n;------------------------------\n; Function: %s\n;------------------------------\n", Name.c_str());
 	write("%s\n", GetIdentifier().c_str());
 	if (Parameters->HasChildren()) {
@@ -60,12 +61,12 @@ void CompareExpr::Compile()
 {
 	if (Lhs->HasStaticValue && Rhs->HasStaticValue) {
 		if (Lhs->Value == Rhs->Value) {
-			warn("Comparison is always true.\n");
+			warn("Comparison is always true\n");
 			HasStaticValue = true;
 			Value = 1;
 		}
 		else {
-			warn("Comparison is always false.\n");
+			warn("Comparison is always false\n");
 			HasStaticValue = true;
 			Value = 0;
 		}
@@ -101,7 +102,7 @@ void IndirectionExpr::Compile()
 
 void ModuleNode::Compile()
 {
-	info("%d: Compiling module %s\n", SourceLine, GetIdentifier().c_str());
+	trace("Line %d: Compiling module <%s>\n", SourceLine, GetIdentifier().c_str());
 	write("\n;==============================\n; Module: %s\n;==============================\n\n", GetIdentifier().c_str());
 	Statements->Compile();
 }
@@ -123,13 +124,21 @@ void PlusExpr::Compile()
 		if (Lhs->Size == Rhs->Size) {
 			//write("\tpush\taf\n");
 			if (Lhs->HasTargetRegister) {
-				write("\tadd\t%s, %s\n", RegisterStringMap[Lhs->TargetRegister].c_str(), Rhs->Target.c_str());
+				if (Rhs->HasStaticValue && Rhs->Value == 1) {
+					write("\tinc\t%s\n", RSMx(Lhs->TargetRegister));
+				} else {
+					write("\tadd\t%s, %s\n", RSMx(Lhs->TargetRegister), Rhs->Target.c_str());
+				}
 				TargetRegister = Lhs->TargetRegister;
 				HasTargetRegister = true;
 			}
 			else {
 				write(S_LOAD, RSM(A), Lhs->Target.c_str());
-				write(S_ADD_A, Rhs->Target.c_str());
+				if (Rhs->HasStaticValue && Rhs->Value == 1) {
+					write("\tinc\ta\n");
+				} else {
+					write(S_ADD_A, Rhs->Target.c_str());
+				}
 				TargetRegister = ERegister::A;
 				HasTargetRegister = true;
 			}
@@ -157,7 +166,7 @@ void FunctionCallStmt::Compile()
 	if (dynamic_cast<FunctionDeclNode*>(decl)) {
 		auto decl_params = ((FunctionDeclNode*)decl)->Parameters;
 		if (decl_params->Children.size() != Parameters->Children.size()) {
-			warn("Parameter mismatch of function %s.\n", decl->GetIdentifier().c_str());
+			warn("Parameter mismatch of function <%s> in line %d.\n", decl->GetIdentifier().c_str(), SourceLine);
 		}
 		else {
 			for (unsigned int i = 0; i < Parameters->Children.size(); i++) {
@@ -176,9 +185,29 @@ void FunctionCallStmt::Compile()
 void IdentExpr::Compile()
 {
 	auto name = GetName();
+
+	// Look up direct replacement
+	auto direct = Definitions[name];
+	if(!direct.empty()) {
+		trace("Found direct replacement <%s> => <%s>\n", name.c_str(), direct.c_str());
+		Name = ""; // Name gets replaced
+		Target = direct;
+		return;
+	}
+
+	// Look up replacement
+	auto identifier = GetIdentifier();
+	auto replacement = Definitions[identifier];
+	if(!replacement.empty()) {
+		trace("Found replacement <%s> => <%s>\n", identifier.c_str(), replacement.c_str());
+		Name = ""; // Name gets replaced
+		Target = replacement;
+		return;
+	}
+
 	auto ref = GetReferenced();
-	if (NULL == ref) {
-		warn("Could not find id '%s'.\n", name.c_str());
+	if (ref == NULL) {
+		warn("Cannot resolve id <%s>\n", name.c_str());
 		Target = name;
 	}
 	else {
@@ -199,24 +228,53 @@ void AssignStmt::Compile()
 	Lhs->Compile();
 	Rhs->Compile();
 
-	if (Lhs->HasTargetRegister) {
-		if (Rhs->HasTargetRegister) {
+	if (Lhs->HasTargetRegister)
+	{
+		if (Rhs->HasTargetRegister)
+		{
+			if(Lhs->Size != Rhs->Size) {
+				warn("Incompatible operation <ld %s, %s>\n", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
+			}
 			WriteLoad(Lhs->TargetRegister, Rhs->TargetRegister);
 		}
-		else {
-			// Optimize "ld a, 0" => "xor a"
-			if (Lhs->TargetRegister == ERegister::A && Rhs->Value == 0) {
+		else if (Rhs->HasStaticValue)
+		{
+			if (Lhs->TargetRegister == ERegister::A && Rhs->Value == 0)
+			{
 				write("\txor\ta\n");
-			} else {
-				if(Rhs->Name.empty()) {
-					WriteLoad(Lhs->TargetRegister, Rhs->Target);
-				} else {
-					WriteLoad(Lhs->TargetRegister, Rhs->GetIdentifier());
+			}
+			else
+			{
+				WriteLoad(Lhs->TargetRegister, Rhs->Value);
+			}
+		}
+		else
+		{
+			if(Rhs->Name.empty()) 
+			{
+				// Combined expression like indirection or replacement from definitions file
+				WriteLoad(Lhs->TargetRegister, Rhs->Target);
+			}
+			else if (auto identExpr = dynamic_cast<IdentExpr*>(Rhs))
+			{
+				auto ref = identExpr->GetReferenced();
+				if (ref) {
+					WriteLoad(Lhs->TargetRegister, ref->GetIdentifier());
 				}
+				else
+				{
+					// Reference unknown (earlier warning)
+					WriteLoad(Lhs->TargetRegister, Rhs->Name);
+				}
+			}
+			else
+			{
+				fatal("Cannot resolve <%s>\n", Rhs->Name);
 			}
 		}
 	}
-	else {
-		WriteDefine(Lhs->GetIdentifier(), Rhs->Target);
+	else
+	{
+		Definitions[Lhs->GetIdentifier()] = Rhs->Target;
 	}
 }
