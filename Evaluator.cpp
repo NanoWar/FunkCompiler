@@ -8,21 +8,23 @@
 #include "StringBuffer.h"
 #include "Writer.h"
 
-void RegisterId(Node *node)
+bool RegisterId(Node *node)
 {
 	auto id = node->GetIdentifier();
 	if (StringToNode[id]) {
-		error("Id <%s> is already registered\n", id.c_str());
+		trace("Id <%s> is already registered\n", id.c_str());
+		return false;
 	}
 	else {
 		trace("Registering id <%s>\n", id.c_str());
 		StringToNode[id] = node;
+		return true;
 	}
 }
 
 void AssignStmt::Evaluate()
 {
-	if(!Lhs->HasTargetRegister) {
+	if (!Lhs->HasTargetRegister) {
 		RegisterId(Lhs);
 	}
 }

@@ -126,7 +126,8 @@ void PlusExpr::Compile()
 			if (Lhs->HasTargetRegister) {
 				if (Rhs->HasStaticValue && Rhs->Value == 1) {
 					write("\tinc\t%s\n", RSMx(Lhs->TargetRegister));
-				} else {
+				}
+				else {
 					write("\tadd\t%s, %s\n", RSMx(Lhs->TargetRegister), Rhs->Target.c_str());
 				}
 				TargetRegister = Lhs->TargetRegister;
@@ -136,7 +137,8 @@ void PlusExpr::Compile()
 				write(S_LOAD, RSM(A), Lhs->Target.c_str());
 				if (Rhs->HasStaticValue && Rhs->Value == 1) {
 					write("\tinc\ta\n");
-				} else {
+				}
+				else {
 					write(S_ADD_A, Rhs->Target.c_str());
 				}
 				TargetRegister = ERegister::A;
@@ -188,7 +190,7 @@ void IdentExpr::Compile()
 
 	// Look up direct replacement
 	auto direct = Definitions[name];
-	if(!direct.empty()) {
+	if (!direct.empty()) {
 		trace("Found direct replacement <%s> => <%s>\n", name.c_str(), direct.c_str());
 		Name = ""; // Name gets replaced
 		Target = direct;
@@ -198,7 +200,7 @@ void IdentExpr::Compile()
 	// Look up replacement
 	auto identifier = GetIdentifier();
 	auto replacement = Definitions[identifier];
-	if(!replacement.empty()) {
+	if (!replacement.empty()) {
 		trace("Found replacement <%s> => <%s>\n", identifier.c_str(), replacement.c_str());
 		Name = ""; // Name gets replaced
 		Target = replacement;
@@ -232,7 +234,7 @@ void AssignStmt::Compile()
 	{
 		if (Rhs->HasTargetRegister)
 		{
-			if(Lhs->Size != Rhs->Size) {
+			if (Lhs->Size != Rhs->Size) {
 				warn("Incompatible operation <ld %s, %s>\n", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
 			}
 			WriteLoad(Lhs->TargetRegister, Rhs->TargetRegister);
@@ -250,7 +252,7 @@ void AssignStmt::Compile()
 		}
 		else
 		{
-			if(Rhs->Name.empty()) 
+			if (Rhs->Name.empty())
 			{
 				// Combined expression like indirection or replacement from definitions file
 				WriteLoad(Lhs->TargetRegister, Rhs->Target);
