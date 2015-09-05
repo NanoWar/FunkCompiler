@@ -54,7 +54,8 @@ Node *IdentExpr::GetReferenced()
 	Node *parent = Parent;
 	Node *node = NULL;
 	string result;
-	while (parent) {
+	while (parent)
+	{
 		// Search for complete path
 		reverse(path.begin(), path.end()); // down
 		result = join(path, ".");
@@ -63,8 +64,8 @@ Node *IdentExpr::GetReferenced()
 		if (node != NULL) break;
 
 		// Jump over unnamed container Nodes
-		if (!parent->Name.empty()) {
-
+		if (!parent->Name.empty())
+		{
 			// Search for higher matches
 			result = join(".", 2, parent->Name, name);
 			node = StringToNode[result];
@@ -82,12 +83,14 @@ Node *IdentExpr::GetReferenced()
 		parent = parent->Parent;
 	}
 
-	if(node == NULL && path.size() > names.size()) {
+	if(node == NULL && path.size() > names.size())
+	{
 		// Try parallel paths
 		reverse(path.begin(), path.end()); // down
 		// For each path segment
 		vector<string> progress;
-		for(int n = 0; n < path.size() - names.size(); ++n) {
+		for(int n = 0; n < path.size() - names.size(); ++n)
+		{
 			progress.push_back(path.at(n));
 			// Concat progress and initial name
 			vector<string> copy(progress.begin(), progress.end());

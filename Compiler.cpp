@@ -112,7 +112,8 @@ void PlusExpr::Compile()
 	Rhs->Compile();
 	Lhs->Compile();
 	stringstream target;
-	if (Lhs->HasStaticValue && Rhs->HasStaticValue) {
+	if (Lhs->HasStaticValue && Rhs->HasStaticValue)
+	{
 		HasStaticValue = true;
 		Value = Lhs->Value + Rhs->Value;
 		target << Value;
@@ -120,25 +121,32 @@ void PlusExpr::Compile()
 		Size = max(Lhs->Size, Rhs->Size);
 		return;
 	}
-	else {
-		if (Lhs->Size == Rhs->Size) {
+	else
+	{
+		if (Lhs->Size == Rhs->Size)
+		{
 			//WriteLn("\tpush\taf");
 			if (Lhs->HasTargetRegister) {
-				if (Rhs->HasStaticValue && Rhs->Value == 1) {
+				if (Rhs->HasStaticValue && Rhs->Value == 1) 
+				{
 					WriteLn("\tinc\t%s", RSMx(Lhs->TargetRegister));
 				}
-				else {
+				else
+				{
 					WriteLn("\tadd\t%s, %s", RSMx(Lhs->TargetRegister), Rhs->Target.c_str());
 				}
 				TargetRegister = Lhs->TargetRegister;
 				HasTargetRegister = true;
 			}
-			else {
+			else 
+			{
 				WriteLn(S_LOAD, RSM(A), Lhs->Target.c_str());
-				if (Rhs->HasStaticValue && Rhs->Value == 1) {
+				if (Rhs->HasStaticValue && Rhs->Value == 1) 
+				{
 					WriteLn("\tinc\ta");
 				}
-				else {
+				else
+				{
 					WriteLn(S_ADD_A, Rhs->Target.c_str());
 				}
 				TargetRegister = ERegister::A;
@@ -150,7 +158,8 @@ void PlusExpr::Compile()
 			Size = Lhs->Size;
 			return;
 		}
-		else {
+		else
+		{
 			target << Lhs->Target << " + " << Rhs->Target;
 			Target = target.str();
 			return;
@@ -165,13 +174,17 @@ void FunctionCallStmt::Compile()
 
 	// Find declaration
 	auto decl = Ident->GetReferenced();
-	if (dynamic_cast<FunctionDeclNode*>(decl)) {
+	if (dynamic_cast<FunctionDeclNode*>(decl))
+	{
 		auto decl_params = ((FunctionDeclNode*)decl)->Parameters;
-		if (decl_params->Children.size() != Parameters->Children.size()) {
+		if (decl_params->Children.size() != Parameters->Children.size())
+		{
 			Warn("Parameter mismatch of function <%s> in line %d", decl->GetIdentifier().c_str(), SourceLine);
 		}
-		else {
-			for (unsigned int i = 0; i < Parameters->Children.size(); i++) {
+		else
+		{
+			for (unsigned int i = 0; i < Parameters->Children.size(); i++)
+			{
 				auto assign = new AssignStmt(decl_params->Children[i]->Register, Parameters->Children[i]);
 				assign->Parent = this;
 				assign->Compile();
@@ -179,7 +192,8 @@ void FunctionCallStmt::Compile()
 		}
 		WriteLn("\tcall\t%s", decl->GetIdentifier().c_str());
 	}
-	else {
+	else
+	{
 		WriteLn("\tcall\t%s", Ident->GetName().c_str());
 	}
 }
@@ -190,7 +204,8 @@ void IdentExpr::Compile()
 
 	// Look up direct replacement
 	auto direct = Definitions[name];
-	if (!direct.empty()) {
+	if (!direct.empty())
+	{
 		Trace("Found direct replacement <%s> => <%s>", name.c_str(), direct.c_str());
 		Name = ""; // Name gets replaced
 		Target = direct;
@@ -200,7 +215,8 @@ void IdentExpr::Compile()
 	// Look up replacement
 	auto identifier = GetIdentifier();
 	auto replacement = Definitions[identifier];
-	if (!replacement.empty()) {
+	if (!replacement.empty())
+	{
 		Trace("Found replacement <%s> => <%s>", identifier.c_str(), replacement.c_str());
 		Name = ""; // Name gets replaced
 		Target = replacement;
@@ -208,18 +224,29 @@ void IdentExpr::Compile()
 	}
 
 	auto ref = GetReferenced();
-	if (ref == NULL) {
-		Warn("Cannot resolve id <%s>", name.c_str());
+	if (ref == NULL)
+	{
+		if (auto def = DefinitionsHashed[name.c_str()])
+		{
+			Trace("Found definition <%s> => <%s>", name.c_str(), def);
+		}
+		else
+		{
+			Warn("Cannot resolve id <%s>", name.c_str());
+		}
 		Target = name;
 	}
-	else {
-		if (dynamic_cast<ParameterNode*>(ref)) {
+	else 
+	{
+		if (dynamic_cast<ParameterNode*>(ref))
+		{
 			TargetRegister = ((ParameterNode*)ref)->Register;
 			HasTargetRegister = true;
 			//TODO: this should not be set:
 			Target = RegisterStringMap[TargetRegister];
 		}
-		else {
+		else
+		{
 			Target = name;
 		}
 	}
