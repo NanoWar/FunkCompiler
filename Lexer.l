@@ -1,10 +1,12 @@
 %{
-#include <iostream>
-using namespace std;
 #define YY_DECL extern "C" int yylex()
+#include "Global.h"
 #include "AST.h"
 #include "Register.h"
 #include "Console.h"
+#include "StringHelper.h"
+#include "Definitions.h"
+
 #include "Grammar.tab.h"
 
 #define YY_USER_ACTION \
@@ -54,10 +56,23 @@ inc						{ BEGIN(include); }
 <include>[ \t\x22]*		{ yytext += yyleng; }
 <include>[^ \t\n\r\x22][^\t\n\r]*\x22? {
 	if(*(yytext+yyleng-1) == '\x22') *(yytext+yyleng-1) = '\0';
-	trace("Including file <%s>\n", yytext);
-	yyin = fopen(yytext, "r");
-	if (!yyin) { error("Could not open input file <%s>\n", yytext); }
-	yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+	Trace("Including file <%s>", yytext);
+	string fileName(yytext);
+	if(endsWith(fileName, ".z80")) {
+		LoadDefinitionsFile(fileName);
+	} else {
+		FILE *includeFile = fopen(yytext, "r");
+		if (!includeFile) {
+			Trace("Including file <%s.funk> instead", yytext);
+			includeFile = fopen(fileName.append(".funk").c_str(), "r");
+		}
+		if (!includeFile) {
+			Error("Cannot open file <%s>", yytext);
+		} else {
+			yyin = includeFile;
+			yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+		}
+	}
 	BEGIN(INITIAL);
 }
 

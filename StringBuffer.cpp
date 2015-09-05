@@ -31,8 +31,8 @@ void CompileCurrentStrings()
 	if (CurrentStrings.size() == 0) {
 		return;
 	}
-	write("\n;==============================\n; Strings for page %d\n;==============================\n\n", CurrentPage);
+	WriteLn("\n;==============================\n; Strings for page %d\n;==============================", CurrentPage);
 	for (auto it = CurrentStrings.begin(); it != CurrentStrings.end(); ++it) {
-		write("%s: .db \"%s\", 0\n", it->second.c_str(), it->first.c_str());
+		WriteLn("%s: .db \"%s\", 0", it->second.c_str(), it->first.c_str());
 	}
 }

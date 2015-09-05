@@ -15,9 +15,8 @@ extern int quiet;
 extern int errors;
 extern int no_colors;
 
-int const indent_step = 2;
-
-void RestoreConsoleAttributes() {
+void RestoreConsoleAttributes()
+{
 #ifdef WIN32
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), user_attributes);
 #elif !defined(MACVER)
@@ -25,7 +24,8 @@ void RestoreConsoleAttributes() {
 #endif
 }
 
-void SaveConsoleAttributes() {
+void SaveConsoleAttributes() 
+{
 #ifdef WIN32
 	CONSOLE_SCREEN_BUFFER_INFO csbiScreenBufferInfo;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbiScreenBufferInfo);
@@ -33,7 +33,8 @@ void SaveConsoleAttributes() {
 #endif
 }
 
-void SetConsoleAttributes(unsigned short attr) {
+void SetConsoleAttributes(unsigned short attr)
+{
 	if(no_colors) return;
 #ifdef WIN32
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (WORD)attr);
@@ -42,104 +43,123 @@ void SetConsoleAttributes(unsigned short attr) {
 #endif
 }
 
-// Only in verbose mode
-void trace(const char* format, ...) {
+#define VPRINTF_ARGS(format) va_list args; va_start(args, format); vprintf(format, args); va_end(args);
+
+void TraceN(const char* format, ...) 
+{
 	if (!quiet && verbose) {
 		SetConsoleAttributes(Console::DARKGRAY);
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
+		VPRINTF_ARGS(format);
 		RestoreConsoleAttributes();
 	}
 }
 
-void info(const char* format, ...) {
+void Trace(const char* format, ...) {
+	if (!quiet && verbose) {
+		SetConsoleAttributes(Console::DARKGRAY);
+		VPRINTF_ARGS(format);
+		printf("\n");
+		RestoreConsoleAttributes();
+	}
+}
+void InfoN(const char* format, ...) {
 	if (!quiet) {
 		SetConsoleAttributes(Console::WHITE);
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
+		VPRINTF_ARGS(format);
 		RestoreConsoleAttributes();
 	}
 }
 
-void warn(const char* format, ...) {
+void Info(const char* format, ...)
+{
+	if (!quiet) {
+		SetConsoleAttributes(Console::WHITE);
+		VPRINTF_ARGS(format);
+		printf("\n");
+		RestoreConsoleAttributes();
+	}
+}
+
+void WarnN(const char* format, ...)
+{
 	if (!quiet) {
 		SetConsoleAttributes(Console::YELLOW);
 		printf("Warning: ");
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
+		VPRINTF_ARGS(format);
 		RestoreConsoleAttributes();
 	}
 }
 
-void error(const char* format, ...) {
+void Warn(const char* format, ...) {
+	if (!quiet) {
+		SetConsoleAttributes(Console::YELLOW);
+		printf("Warning: ");
+		VPRINTF_ARGS(format);
+		printf("\n");
+		RestoreConsoleAttributes();
+	}
+}
+
+void ErrorN(const char* format, ...) 
+{
 	errors++;
 	if (!quiet) {
 		SetConsoleAttributes(Console::RED);
 		printf("Error: ");
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
+		VPRINTF_ARGS(format);
 		RestoreConsoleAttributes();
 	}
 }
 
-void fatal(const char* format, ...) {
+void Error(const char* format, ...) 
+{
+	errors++;
+	if (!quiet) {
+		SetConsoleAttributes(Console::RED);
+		printf("Error: ");
+		VPRINTF_ARGS(format);
+		printf("\n");
+		RestoreConsoleAttributes();
+	}
+}
+
+void FatalN(const char* format, ...)
+{
 	errors++;
 	if (!quiet) {
 		SetConsoleAttributes(Console::MAGENTA);
 		printf("Fatal: ");
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
+		VPRINTF_ARGS(format);
 		RestoreConsoleAttributes();
 	}
 }
 
-void print(const char* format, ...) {
+void Fatal(const char* format, ...)
+{
+	errors++;
 	if (!quiet) {
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
+		SetConsoleAttributes(Console::MAGENTA);
+		printf("Fatal: ");
+		VPRINTF_ARGS(format);
+		printf("\n");
+		RestoreConsoleAttributes();
 	}
 }
 
-void println(const char* format, ...) {
+void PrintN(const char* format, ...)
+{
 	if (!quiet) {
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
+		VPRINTF_ARGS(format);
+	}
+}
+
+void Print(const char* format, ...)
+{
+	if (!quiet) {
+		VPRINTF_ARGS(format);
 		printf("\n");
 	}
 }
-
-void print_indent(int depth) {
-	while (depth) {
-		if (depth-- % indent_step == 0) {
-			print("|");
-		}
-		else {
-			print(" ");
-		}
-	}
-}
-
-void print_node(Node *n, int depth) {
-	int i = 0;
-	print_indent(depth);
-	print(n->GetIdentifier().c_str());
-	print("\n");
-}
-
 
 #ifdef WIN32
 #include <windows.h>

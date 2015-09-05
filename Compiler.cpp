@@ -11,15 +11,15 @@
 
 void FunctionDeclNode::Compile()
 {
-	trace("Line %d: Compiling function <%s>\n", SourceLine, GetIdentifier().c_str());
-	//write("\n;------------------------------\n; Function: %s\n;------------------------------\n", Name.c_str());
-	write("%s\n", GetIdentifier().c_str());
+	Trace("Line %d: Compiling function <%s>", SourceLine, GetIdentifier().c_str());
+	//WriteLn("\n;------------------------------\n; Function: %s\n;------------------------------", Name.c_str());
+	WriteLn("\n%s", GetIdentifier().c_str());
 	if (Parameters->HasChildren()) {
-		write(";Inputs:\n");
+		WriteLn(";Inputs:");
 		Parameters->Compile();
 	}
 	Statements->Compile();
-	write("\tret\n\n");
+	WriteLn("\tret");
 }
 
 void IfStmt::Compile()
@@ -32,28 +32,28 @@ void IfStmt::Compile()
 		if (Expr->Size == 1) {
 			// Assign to a
 			WriteLoad(ERegister::A, Expr->TargetRegister);
-			write("\tor\ta\n");
+			WriteLn("\tor\ta");
 		}
 		else if (Expr->Size == 2){
 			// Assign to hl
 			WriteLoad(ERegister::HL, Expr->TargetRegister);
-			write("\tld\ta, h\n");
-			write("\tor\tl\n");
+			WriteLn("\tld\ta, h");
+			WriteLn("\tor\tl");
 		}
 	}
 
 	if (FalseStmts->HasChildren()) {
-		write("\tjp\tnz, __if_else\n");
+		WriteLn("\tjp\tnz, __if_else");
 		TrueStmts->Compile();
-		write("\tjp\t__if_end\n");
-		write("__if_else\n");
+		WriteLn("\tjp\t__if_end");
+		WriteLn("__if_else");
 		FalseStmts->Compile();
-		write("__if_end\n");
+		WriteLn("__if_end");
 	}
 	else {
-		write("\tjp\tnz, __if_end\n");
+		WriteLn("\tjp\tnz, __if_end");
 		TrueStmts->Compile();
-		write("__if_end\n");
+		WriteLn("__if_end");
 	}
 }
 
@@ -61,12 +61,12 @@ void CompareExpr::Compile()
 {
 	if (Lhs->HasStaticValue && Rhs->HasStaticValue) {
 		if (Lhs->Value == Rhs->Value) {
-			warn("Comparison is always true\n");
+			Warn("Comparison is always true");
 			HasStaticValue = true;
 			Value = 1;
 		}
 		else {
-			warn("Comparison is always false\n");
+			Warn("Comparison is always false");
 			HasStaticValue = true;
 			Value = 0;
 		}
@@ -74,7 +74,7 @@ void CompareExpr::Compile()
 	else {
 		Lhs->Compile();
 		if (Lhs->HasTargetRegister && Lhs->TargetRegister == ERegister::HL) {
-			write("\tpush\thl\n");
+			WriteLn("\tpush\thl");
 		}
 		Rhs->Compile();
 		// TODO
@@ -82,14 +82,14 @@ void CompareExpr::Compile()
 		if (Lhs->HasTargetRegister) {
 			// Assign LHS to a
 			WriteLoad(ERegister::A, Lhs->TargetRegister);
-			write("\tcp\t%s\n", Rhs->Target.c_str());
+			WriteLn("\tcp\t%s", Rhs->Target.c_str());
 		}
 	}
 }
 
 void ParameterNode::Compile()
 {
-	write(";  %s = %s\n", RegisterStringMap[Register].c_str(), Name.c_str());
+	WriteLn(";  %s = %s", RegisterStringMap[Register].c_str(), Name.c_str());
 }
 
 void IndirectionExpr::Compile()
@@ -102,8 +102,8 @@ void IndirectionExpr::Compile()
 
 void ModuleNode::Compile()
 {
-	trace("Line %d: Compiling module <%s>\n", SourceLine, GetIdentifier().c_str());
-	write("\n;==============================\n; Module: %s\n;==============================\n\n", GetIdentifier().c_str());
+	Trace("Line %d: Compiling module <%s>", SourceLine, GetIdentifier().c_str());
+	WriteLn("\n;==============================\n; Module: %s\n;==============================", GetIdentifier().c_str());
 	Statements->Compile();
 }
 
@@ -122,29 +122,29 @@ void PlusExpr::Compile()
 	}
 	else {
 		if (Lhs->Size == Rhs->Size) {
-			//write("\tpush\taf\n");
+			//WriteLn("\tpush\taf");
 			if (Lhs->HasTargetRegister) {
 				if (Rhs->HasStaticValue && Rhs->Value == 1) {
-					write("\tinc\t%s\n", RSMx(Lhs->TargetRegister));
+					WriteLn("\tinc\t%s", RSMx(Lhs->TargetRegister));
 				}
 				else {
-					write("\tadd\t%s, %s\n", RSMx(Lhs->TargetRegister), Rhs->Target.c_str());
+					WriteLn("\tadd\t%s, %s", RSMx(Lhs->TargetRegister), Rhs->Target.c_str());
 				}
 				TargetRegister = Lhs->TargetRegister;
 				HasTargetRegister = true;
 			}
 			else {
-				write(S_LOAD, RSM(A), Lhs->Target.c_str());
+				WriteLn(S_LOAD, RSM(A), Lhs->Target.c_str());
 				if (Rhs->HasStaticValue && Rhs->Value == 1) {
-					write("\tinc\ta\n");
+					WriteLn("\tinc\ta");
 				}
 				else {
-					write(S_ADD_A, Rhs->Target.c_str());
+					WriteLn(S_ADD_A, Rhs->Target.c_str());
 				}
 				TargetRegister = ERegister::A;
 				HasTargetRegister = true;
 			}
-			//write("\tpop\taf\n");
+			//WriteLn("\tpop\taf");
 			target << RegisterStringMap[TargetRegister];
 			Target = target.str();
 			Size = Lhs->Size;
@@ -168,7 +168,7 @@ void FunctionCallStmt::Compile()
 	if (dynamic_cast<FunctionDeclNode*>(decl)) {
 		auto decl_params = ((FunctionDeclNode*)decl)->Parameters;
 		if (decl_params->Children.size() != Parameters->Children.size()) {
-			warn("Parameter mismatch of function <%s> in line %d.\n", decl->GetIdentifier().c_str(), SourceLine);
+			Warn("Parameter mismatch of function <%s> in line %d", decl->GetIdentifier().c_str(), SourceLine);
 		}
 		else {
 			for (unsigned int i = 0; i < Parameters->Children.size(); i++) {
@@ -177,10 +177,10 @@ void FunctionCallStmt::Compile()
 				assign->Compile();
 			}
 		}
-		write("\tcall\t%s\n", decl->GetIdentifier().c_str());
+		WriteLn("\tcall\t%s", decl->GetIdentifier().c_str());
 	}
 	else {
-		write("\tcall\t%s\n", Ident->GetName().c_str());
+		WriteLn("\tcall\t%s", Ident->GetName().c_str());
 	}
 }
 
@@ -191,7 +191,7 @@ void IdentExpr::Compile()
 	// Look up direct replacement
 	auto direct = Definitions[name];
 	if (!direct.empty()) {
-		trace("Found direct replacement <%s> => <%s>\n", name.c_str(), direct.c_str());
+		Trace("Found direct replacement <%s> => <%s>", name.c_str(), direct.c_str());
 		Name = ""; // Name gets replaced
 		Target = direct;
 		return;
@@ -201,7 +201,7 @@ void IdentExpr::Compile()
 	auto identifier = GetIdentifier();
 	auto replacement = Definitions[identifier];
 	if (!replacement.empty()) {
-		trace("Found replacement <%s> => <%s>\n", identifier.c_str(), replacement.c_str());
+		Trace("Found replacement <%s> => <%s>", identifier.c_str(), replacement.c_str());
 		Name = ""; // Name gets replaced
 		Target = replacement;
 		return;
@@ -209,7 +209,7 @@ void IdentExpr::Compile()
 
 	auto ref = GetReferenced();
 	if (ref == NULL) {
-		warn("Cannot resolve id <%s>\n", name.c_str());
+		Warn("Cannot resolve id <%s>", name.c_str());
 		Target = name;
 	}
 	else {
@@ -235,7 +235,7 @@ void AssignStmt::Compile()
 		if (Rhs->HasTargetRegister)
 		{
 			if (Lhs->Size != Rhs->Size) {
-				warn("Incompatible operation <ld %s, %s>\n", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
+				Warn("Incompatible operation <ld %s, %s>", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
 			}
 			WriteLoad(Lhs->TargetRegister, Rhs->TargetRegister);
 		}
@@ -243,7 +243,7 @@ void AssignStmt::Compile()
 		{
 			if (Lhs->TargetRegister == ERegister::A && Rhs->Value == 0)
 			{
-				write("\txor\ta\n");
+				WriteLn("\txor\ta");
 			}
 			else
 			{
@@ -271,7 +271,7 @@ void AssignStmt::Compile()
 			}
 			else
 			{
-				fatal("Cannot resolve <%s>\n", Rhs->Name);
+				Fatal("Cannot resolve <%s>", Rhs->Name);
 			}
 		}
 	}

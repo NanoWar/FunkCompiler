@@ -1,48 +1,95 @@
 #include "Global.h"
 
 #include "Definitions.h"
+#include "StringHelper.h"
 #include "Console.h"
+#include "Hash.h"
 #include <fstream>
 #include <sstream>
 
 #ifdef WIN32
-    #include <direct.h>
-    #define GetCurrentDir _getcwd
+#include <direct.h>
+#define GetCurrentDir _getcwd
 #else
-    #include <unistd.h>
-    #define GetCurrentDir getcwd
+#include <unistd.h>
+#define GetCurrentDir getcwd
 #endif
 
-unordered_map<string, string> Definitions = unordered_map<string, string>();
+struct char_ptr_hasher : public std::unary_function<const char *, size_t>
+{
+	size_t operator()(const char* _Keyval) const {
+		uint32_t result[4];
+		MurmurHash3_128(_Keyval, strlen(_Keyval), 0xB16B00B5 + 'F' + 'u' + 'n' + 'k', &result);
+		return *result;
+	}
+};
 
-void LoadDefinitionsFile(string filePath)
+struct char_ptr_equals : public std::binary_function<const char *, const char *, bool>
+{
+	bool operator()(const char * _Left, const char *_Right) const {
+		return strcmp(_Left, _Right) == 0;
+	}
+};
+
+unordered_map<string, string> Definitions = unordered_map<string, string>();
+unordered_map<const char *, const char *, char_ptr_hasher, char_ptr_equals> DefinitionsHashed = unordered_map<const char *, const char *, char_ptr_hasher, char_ptr_equals>();
+
+int ParseBuffer(char *file_begin, char *file_end)
+{
+	int found = 0;
+	char *ptr = file_begin,
+		*line_start, *line_end,
+		*key_start, *key_end,
+		*equ_start, *equ_end,
+		*value_start, *value_end;
+	while(ptr < file_end)
+	{
+		line_start = ptr;
+		line_end = SkipLine(line_start);
+		ptr = line_end + 1;
+		key_start = SkipWhiteSpace(line_start);
+		key_end = SkipWord(key_start);
+		if (key_end >= line_end) continue;
+		equ_start = SkipWhiteSpace(key_end);
+		equ_end = SkipEqu(equ_start);
+		if (equ_end >= line_end) continue;
+		if (equ_start == equ_end) continue;
+		if (!(*equ_start == '=' || stricmp(equ_start, "equ"))) continue;
+		value_start = SkipWhiteSpace(equ_end);
+		value_end = SkipWord(value_start);
+		if (value_end > line_end) continue;
+		// Terminate strings
+		*key_end = *value_end = 0;
+		DefinitionsHashed[key_start] = value_start;
+		found++;
+	}
+	Trace("Found %d definitions", found, DefinitionsHashed.size());
+	return found;
+}
+
+char *LoadDefinitionsFile(string filePath)
 {
 	ifstream file(filePath);
 	if(!file.is_open()) {
-		error("Cannot open file <%s>\n", filePath.c_str());
-		return;
+		Error("Cannot open file <%s>", filePath.c_str());
+		return NULL;
 	}
 	if (!file.good()) {
-		error("Cannot read file <%s>\n", filePath.c_str());
-		return;
+		Error("Cannot read file <%s>", filePath.c_str());
+		return NULL;
 	}
-	
-	string line, key, value, tmp;
-	while(getline(file, line)) {
-		// Remove comments (assume no escaping)
-		auto comment = line.find(';');
-		if(comment != string::npos) {
-			line.erase(comment, string::npos);
-		}
-		istringstream lss(line);
-		lss >> key >> tmp >> value;
-		if(key.empty()) continue;
-		if(key[0] == '#') continue;
-		if(key[0] == '.') continue;
-		if (strcmp(tmp.c_str(), "=") == 0
-		|| stricmp(tmp.c_str(), "equ") == 0) {
-			// Override if necessary
-			Definitions[key] = value;
-		}
-	}
+
+	// Read file into buffer
+	int length = file.seekg(0, file.end).tellg();
+	char *buffer = new char[length+1];
+	file.seekg(0, file.beg);
+	file.read(buffer, length);
+	if (!file.eof()) Error("File <%s> could not be read entirely", filePath.c_str());
+	length = file.gcount();
+	file.close();
+	// Terminate buffer
+	buffer[length] = 0;
+	// Parse contents
+	ParseBuffer(buffer, buffer + length -1);
+	return buffer;
 }

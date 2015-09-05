@@ -54,6 +54,12 @@
     <ClCompile Include="Definitions.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="Hash.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Global.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Flex Include="Lexer.l">
@@ -94,6 +100,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="Definitions.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Hash.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

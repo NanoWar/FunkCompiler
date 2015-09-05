@@ -1,8 +1,6 @@
 #ifndef Console_h
 #define Console_h
 
-#include "AST.h"
-
 #ifdef WIN32
 #include <Windows.h>
 #include <Wincon.h>
@@ -30,14 +28,12 @@ namespace Console
 }
 #endif WIN32
 
-void trace(const char* format, ...);
-void info(const char* format, ...);
-void warn(const char* format, ...);
-void error(const char* format, ...);
-void fatal(const char* format, ...);
-
-void print(const char* format, ...);
-void println(const char* format, ...);
+void Trace(const char* format, ...);
+void Info(const char* format, ...);
+void Warn(const char* format, ...);
+void Error(const char* format, ...);
+void Fatal(const char* format, ...);
+void Print(const char* format, ...);
 
 void SaveConsoleAttributes();
 void RestoreConsoleAttributes();

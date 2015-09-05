@@ -1,25 +1,22 @@
 #include "Global.h"
+#include <typeinfo>
+#include <chrono>
+
 #include "AST.h"
 #include "Parser.h"
 #include "Console.h"
-#include <typeinfo>
+#include "Writer.h"
+#include "Definitions.h"
+#include "StringHelper.h"
 
 extern int compile(Node *n);
 
 StatementsNode *Program;
-
-int verbose = 0;
-int quiet = 0;
-int tree = 0;
-int repl = 0;
-int no_colors = 0;
-
 char *tmp_file;
-FILE *output_file = stdout;
-int errors = 0;
 
 int main(int argc, char **argv)
 {
+	std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 	SaveConsoleAttributes();
 
 	int expect_input_string = 0;
@@ -36,6 +33,7 @@ int main(int argc, char **argv)
 			fwrite(argv[i], sizeof(char), strlen(argv[i]), f);
 			fclose(f);
 			yyin = fopen(tmp_file, "r");
+			input_file = yyin;
 		}
 
 		// -v Verbose
@@ -46,9 +44,6 @@ int main(int argc, char **argv)
 
 		// -d Debug
 		else if (strcmp(argv[i], "-d") == 0) yydebug = 1;
-
-		// -t Tree
-		else if (strcmp(argv[i], "-t") == 0) tree = 1;
 
 		// -a Interactive
 		else if (strcmp(argv[i], "-a") == 0) repl = 1;
@@ -63,55 +58,83 @@ int main(int argc, char **argv)
 		else if (expect_input_file) {
 			expect_input_file = 0;
 			yyin = fopen(argv[i], "r");
-			if (!yyin) { error("Could not open input file <%s>.\n", argv[i]); return -1; }
+			if (!yyin) { Error("Could not open input file <%s>", argv[i]); return -1; }
+			char *file_name = SkipFolders(argv[i]);
+			char *file_ext = SkipFileName(file_name);
+			if (file_name != file_ext) *(file_ext-1) = 0;
+			input_file_name.assign(file_name);
+			input_file_ext.assign(file_ext);
+			input_file = yyin;
 		}
 
 		// Output file
 		else if (expect_output_file) {
 			expect_output_file = 0;
 			output_file = fopen(argv[i], "w+");
-			if (!output_file) { error("Could not create output file <%s>.\n", argv[i]); return -1; }
+			if (!output_file) { Error("Could not create output file <%s>", argv[i]); return -1; }
 		}
 	}
-	
+
 	SetConsoleAttributes(Console::WHITE);
-	println("FunkCompiler by Robert Kuhfss");
-	if (verbose) println("-> verbose mode");
-	if (yydebug) println("-> debug mode");
+	Print("FunkCompiler by Robert Kuhfss");
+	if (verbose) Print("-> verbose mode");
+	if (yydebug) Print("-> debug mode");
 	RestoreConsoleAttributes();
 
 	if (argc == 1) {
 		// Display usage
-		println("\nUsage: [options] <input file> <output file>");
-		println("  -v         Verbose mode (show additional output)");
-		println("  -q         Quiet mode (supress all console output)");
-		println("  -x <code>  Execute code directly");
-		println("  -n         No colored console output");
-		println("  -a         Interactive mode");
-		println("  -d         Debug mode (show debug messages)");
-		println("  -t         Show parse tree");
+		Print("\nUsage: [options] <input file> <output file>");
+		Print("  -v         Verbose mode (show additional output)");
+		Print("  -q         Quiet mode (supress all console output)");
+		Print("  -x <code>  Execute code directly");
+		Print("  -n         No colored console output");
+		Print("  -a         Interactive mode");
+		Print("  -d         Debug mode (show debug messages)");
 		return 0;
 	}
 
-	if (repl) {
-		trace("Reading from console input ...\n");
+	
+	if (repl)
+	{
+		Trace("Reading from console input ...");
 		AddConsoleCtrlHandler();
 	}
-	else {
-		trace("Parsing input ...\n");
+	else
+	{
+		if (!input_file) { Error("No input file specified"); return -1; }
+		if (input_file_name.empty())
+		{
+			// -x mode
+			output_file = stdout;
+		}
+		else
+		{
+			// Interfere output file name from input file name
+			if (!output_file)
+			{
+				Trace("Interfering output file name");
+				string output_file_name(input_file_name);
+				output_file_name.append(".asm");
+				output_file = fopen(output_file_name.c_str(), "w+");
+				if (!output_file) { Error("Could not create output file <%s>", output_file_name.c_str()); return -1; }
+			}
+			Print("Compiling \"%s\"", input_file_name.c_str());
+		}
+		Trace("Parsing input");
 	}
 
 
 	// Parse
 	int yyparse_ret = yyparse();
-	trace("Parsing completed.\n");
+	Trace("Parsing completed");
 
-	if (!yyparse_ret) {
-
+	if (!yyparse_ret)
+	{
 		// Evaluate
 		Program->Evaluate();
 
 		// Compile
+		WriteProgStart();
 		Program->Compile();
 
 		// Add strings
@@ -122,6 +145,18 @@ int main(int argc, char **argv)
 	// Safety flush
 	fflush(output_file);
 
+	if (errors)
+	{
+		SetConsoleAttributes(Console::RED);
+		Print("There were errors");
+	}
+	else
+	{
+		SetConsoleAttributes(Console::GREEN);
+		Print("Success!");
+	}
+	RestoreConsoleAttributes();
+	
 	// Clean up files
 	fclose(yyin);
 	fclose(output_file);
@@ -129,20 +164,11 @@ int main(int argc, char **argv)
 		remove(tmp_file);
 	}
 
-	if (errors) {
-		SetConsoleAttributes(Console::RED);
-		print("There were errors.\n");
-	}
-	else {
-		SetConsoleAttributes(Console::GREEN);
-		print("Success!\n");
-	}
-
-	RestoreConsoleAttributes();
+	Trace("It took %.2f seconds", std::chrono::duration_cast<chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() / 1000.0);
 	return yyparse_ret;
 }
 
 void yyerror(char const *s) {
 	errors++;
-	error("%s in line %d\n", s, yylineno);
+	Error("%s in line %d", s, yylineno);
 }

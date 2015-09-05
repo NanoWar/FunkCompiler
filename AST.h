@@ -9,9 +9,6 @@
 #include "StringBuffer.h"
 #include <typeinfo>
 
-// Prevent compiler error...
-void trace(const char* format, ...);
-
 class Node;
 
 extern map<Node*, string> NodeToString;
@@ -296,7 +293,7 @@ public:
 		TargetRegister = reg;
 		Target = RegisterStringMap[reg];
 		Size = IS_SMALL(reg) ? 1 : 2;
-		//trace("Register %s in line %d\n", Target.c_str(), SourceLine);
+		//Trace("Register %s in line %d", Target.c_str(), SourceLine);
 	}
 };
 
@@ -343,7 +340,7 @@ public:
 	{
 		Name = *name;
 		statements->Parent = this;
-		trace("Module %s in line %d\n", Name.c_str(), SourceLine);
+		Trace("Creating module <%s> in line %d", Name.c_str(), SourceLine);
 	}
 
 	~ModuleNode()

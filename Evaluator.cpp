@@ -12,11 +12,11 @@ bool RegisterId(Node *node)
 {
 	auto id = node->GetIdentifier();
 	if (StringToNode[id]) {
-		trace("Id <%s> is already registered\n", id.c_str());
+		Trace("Id <%s> is already registered", id.c_str());
 		return false;
 	}
 	else {
-		trace("Registering id <%s>\n", id.c_str());
+		Trace("Registering id <%s>", id.c_str());
 		StringToNode[id] = node;
 		return true;
 	}

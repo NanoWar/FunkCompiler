@@ -71,3 +71,56 @@ bool endsWith(string const &fullString, string const &ending)
     if (fullString.length() < ending.length()) return false;
 	return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
 }
+
+
+// Returns pointer after last slash
+char *SkipFolders(char *ptr)
+{
+	char *name_start = ptr;
+	while(*ptr) {
+		if(*ptr == '\\' || *ptr == '/') {
+			name_start = ptr + 1;
+		}
+		ptr++;
+	}
+	return name_start;
+}
+
+// Returns pointer after last dot
+char *SkipFileName(char *ptr)
+{
+	char *ext_start = ptr;
+	while(*ptr) {
+		if(*ptr == '.') {
+			ext_start = ptr + 1;
+		}
+		ptr++;
+	}
+	return ext_start;
+}
+
+
+char *SkipWhiteSpace(char *ptr)
+{
+	while(*ptr == ' ' || *ptr == '\t') ptr++;
+	return ptr;
+}
+
+char *SkipLine(char *ptr)
+{
+	while(*ptr != '\0' && *ptr != '\n') ptr++;
+	return ptr;
+}
+
+char *SkipWord(char *ptr)
+{
+	while(*ptr != '\0' && (*ptr == '_' || isalnum(*ptr))) ptr++;
+	return ptr;
+}
+
+char *SkipEqu(char *ptr)
+{
+	while(*ptr != '\0' && (*ptr == '=' || isalnum(*ptr))) ptr++;
+	return ptr;
+}
+

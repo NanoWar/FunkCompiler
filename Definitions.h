@@ -5,6 +5,6 @@
 
 extern unordered_map<string, string> Definitions;
 
-void LoadDefinitionsFile(string filePath);
+char *LoadDefinitionsFile(string filePath);
 
 #endif Definitions_h
