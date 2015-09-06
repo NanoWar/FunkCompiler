@@ -229,6 +229,9 @@ void IdentExpr::Compile()
 		if (auto def = DefinitionsHashed[name.c_str()])
 		{
 			Trace("Found definition <%s> => <%s>", name.c_str(), def);
+			int num = ParseNumber(def);
+			if (num == -1) Size = 0;
+			else Size = num > 255 ? 2 : 1;
 		}
 		else
 		{
@@ -261,7 +264,8 @@ void AssignStmt::Compile()
 	{
 		if (Rhs->HasTargetRegister)
 		{
-			if (Lhs->Size != Rhs->Size) {
+			if (Lhs->Size != Rhs->Size)
+			{
 				Warn("Incompatible operation <ld %s, %s>", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
 			}
 			WriteLoad(Lhs->TargetRegister, Rhs->TargetRegister);
@@ -281,13 +285,16 @@ void AssignStmt::Compile()
 		{
 			if (Rhs->Name.empty())
 			{
+				// TODO: check for "ld de, (hl)"
+				Trace("Interesting expression <%s> of size <%d>", Rhs->Target.c_str(), Rhs->Size);
 				// Combined expression like indirection or replacement from definitions file
 				WriteLoad(Lhs->TargetRegister, Rhs->Target);
 			}
 			else if (auto identExpr = dynamic_cast<IdentExpr*>(Rhs))
 			{
 				auto ref = identExpr->GetReferenced();
-				if (ref) {
+				if (ref)
+				{
 					WriteLoad(Lhs->TargetRegister, ref->GetIdentifier());
 				}
 				else

@@ -22,8 +22,12 @@ struct char_ptr_equals : public std::binary_function<const char *, const char *,
 };
 
 extern unordered_map<string, string> Definitions;
-extern unordered_map<const char *, const char *, char_ptr_hasher, char_ptr_equals> DefinitionsHashed;
+extern unordered_map<const char *, char *, char_ptr_hasher, char_ptr_equals> DefinitionsHashed;
+
+extern vector<char *>buffers;
 
 char *LoadDefinitionsFile(string filePath);
+
+int ParseNumber(char *ptr);
 
 #endif Definitions_h

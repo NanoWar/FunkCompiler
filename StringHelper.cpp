@@ -118,6 +118,12 @@ char *SkipWord(char *ptr)
 	return ptr;
 }
 
+char *SkipLineTillComment(char *ptr)
+{
+	while(*ptr != '\0' && *ptr != '\n' && *ptr != ';') ptr++;
+	return ptr;
+}
+
 char *SkipEqu(char *ptr)
 {
 	while(*ptr != '\0' && (*ptr == '=' || isalnum(*ptr))) ptr++;

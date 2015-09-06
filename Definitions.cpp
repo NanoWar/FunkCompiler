@@ -16,7 +16,9 @@
 #endif
 
 unordered_map<string, string> Definitions = unordered_map<string, string>();
-unordered_map<const char *, const char *, char_ptr_hasher, char_ptr_equals> DefinitionsHashed = unordered_map<const char *, const char *, char_ptr_hasher, char_ptr_equals>();
+unordered_map<const char *, char *, char_ptr_hasher, char_ptr_equals> DefinitionsHashed = unordered_map<const char *, char *, char_ptr_hasher, char_ptr_equals>();
+
+vector<char *>buffers;
 
 int ParseBuffer(char *file_begin, char *file_end)
 {
@@ -40,7 +42,7 @@ int ParseBuffer(char *file_begin, char *file_end)
 		if (equ_start == equ_end) continue;
 		if (!(*equ_start == '=' || stricmp(equ_start, "equ"))) continue;
 		value_start = SkipWhiteSpace(equ_end);
-		value_end = SkipWord(value_start);
+		value_end = SkipLineTillComment(value_start);
 		if (value_end > line_end) continue;
 		// Terminate strings
 		*key_end = *value_end = 0;
@@ -75,5 +77,23 @@ char *LoadDefinitionsFile(string filePath)
 	buffer[length] = 0;
 	// Parse contents
 	ParseBuffer(buffer, buffer + length -1);
+	buffers.push_back(buffer);
 	return buffer;
+}
+
+int ParseNumber(char *ptr)
+{
+	int result = -1;
+	std::stringstream ss;
+	if (*ptr == '0' && *(ptr+1) == 'x')
+	{
+		ss << std::hex << ptr+2;
+		ss >> result;
+	}
+	else if(*(SkipWord(ptr)-1) == 'h')
+	{  
+		ss << std::hex << ptr;
+		ss >> result;
+	}
+	return result;
 }

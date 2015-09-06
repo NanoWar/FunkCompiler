@@ -13,6 +13,7 @@ char *SkipFolders(char *ptr);
 char *SkipFileName(char *ptr);
 char *SkipWhiteSpace(char *ptr);
 char *SkipLine(char *ptr);
+char *SkipLineTillComment(char *ptr);
 char *SkipWord(char *ptr);
 char *SkipEqu(char *ptr);
 
