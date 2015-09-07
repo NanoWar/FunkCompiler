@@ -24,8 +24,13 @@ bool RegisterId(Node *node)
 
 void AssignStmt::Evaluate()
 {
-	if (!Lhs->HasTargetRegister) {
+	if (!Lhs->HasTargetRegister)
+	{
 		RegisterId(Lhs);
+	}
+	else
+	{
+		GetRegisterUsage()->SetUsage(Lhs->TargetRegister, ERegisterUsage::USED);
 	}
 }
 

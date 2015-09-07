@@ -60,6 +60,9 @@
     <ClCompile Include="Global.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="AST.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Flex Include="Lexer.l">

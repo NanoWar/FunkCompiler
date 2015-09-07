@@ -31,6 +31,8 @@ public:
 	string GetIdentifier();
 	virtual void Evaluate() { }
 	virtual void Compile() { }
+
+	RegisterUsage *GetRegisterUsage();
 };
 
 template<typename OwnType, typename ItemType, typename BaseType = Node>
@@ -409,6 +411,7 @@ class FunctionDeclNode : public StatementNode
 public:
 	ParametersNode *Parameters;
 	StatementsNode *Statements;
+	RegisterUsage RegisterUsage;
 
 	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements)
 		: Parameters(parameters), Statements(statements),

@@ -1,18 +1,21 @@
 #ifndef Register_h
 #define Register_h
 
+#include "Console.h"
+
 enum ERegister
 {
 	NONE,
 	A, F, B, C, D, E, H, L, IXH, IXL, IYH, IYL, I, R,
 	AF, BC, DE, HL, IX, IY, IR,
-	MAX
+	MAX,
+	AFS
 };
 
 enum ERegisterUsage
 {
 	FREE,
-	FIXED,
+	FIXED_,
 	USED
 };
 
@@ -41,9 +44,9 @@ struct RegisterUsageInfo
 		{
 			result.Usage = ERegisterUsage::FREE;
 		}
-		else if (Usage == ERegisterUsage::FIXED && other.Usage == ERegisterUsage::FIXED)
+		else if (Usage == ERegisterUsage::FIXED_ && other.Usage == ERegisterUsage::FIXED_)
 		{
-			result.Usage = ERegisterUsage::FIXED;
+			result.Usage = ERegisterUsage::FIXED_;
 			result.Value = otherIsLow ? other.Value + Value * 256 : Value + other.Value * 256;
 		}
 		else
@@ -61,7 +64,7 @@ private:
 
 public:
 
-	ERegister AnyFixedValue(int value, bool isSmall)
+	ERegister AnyFIXED_Value(int value, bool isSmall)
 	{
 		ERegister start, end;
 		if (isSmall)
@@ -79,7 +82,7 @@ public:
 		{
 			auto reg = (ERegister)i;
 			auto info = RegisterUsageInfoMap[reg];
-			if (info.Usage == ERegisterUsage::FIXED && info.Value == value)
+			if (info.Usage == ERegisterUsage::FIXED_ && info.Value == value)
 			{
 				return reg;
 			}
@@ -115,8 +118,19 @@ public:
 			lo.Value = info.Value % 256;
 			RegisterUsageInfoMap[HI_REG(reg)] = hi;
 			RegisterUsageInfoMap[LO_REG(reg)] = lo;
-
 		}
+	}
+
+	void SetUsage(ERegister reg, ERegisterUsage usage, int value = 0)
+	{
+		if (GetUsageInfo(reg).Usage != ERegisterUsage::FREE)
+		{
+			Warn("Register <%s> is already in use", RSMx(reg));
+		}
+		RegisterUsageInfo info;
+		info.Usage = usage;
+		info.Value = value;
+		SetUsageInfo(reg, info);
 	}
 };
 
