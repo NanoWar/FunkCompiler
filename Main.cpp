@@ -76,20 +76,21 @@ int main(int argc, char **argv)
 	}
 
 	SetConsoleAttributes(Console::WHITE);
-	Print("FunkCompiler by Robert Kuhfss");
+	Print("Funk Z80 ASM pre-compiler 1.0");
 	if (verbose) Print("-> verbose mode");
 	if (yydebug) Print("-> debug mode");
 	RestoreConsoleAttributes();
 
 	if (argc == 1) {
 		// Display usage
-		Print("\nUsage: [options] <input file> <output file>");
+		Print("\nUsage:\n  [options] <input file> <output file>\n");
 		Print("  -v         Verbose mode (show additional output)");
 		Print("  -q         Quiet mode (supress all console output)");
 		Print("  -x <code>  Execute code directly");
 		Print("  -n         No colored console output");
 		Print("  -a         Interactive mode");
 		Print("  -d         Debug mode (show debug messages)");
+		Print("\nby Robert Kuhfss");
 		return 0;
 	}
 
