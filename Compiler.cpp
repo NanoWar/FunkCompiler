@@ -9,12 +9,18 @@
 #include "Writer.h"
 #include "Definitions.h"
 
+void AsmNode::Compile()
+{
+	WriteLn(Text.c_str());
+}
+
 void FunctionDeclNode::Compile()
 {
 	Trace("Line %d: Compiling function <%s>", SourceLine, GetIdentifier().c_str());
 	//WriteLn("\n;------------------------------\n; Function: %s\n;------------------------------", Name.c_str());
 	WriteLn("\n%s", GetIdentifier().c_str());
-	if (Parameters->HasChildren()) {
+	if (Parameters->HasChildren())
+	{
 		WriteLn(";Inputs:");
 		Parameters->Compile();
 	}
@@ -25,16 +31,20 @@ void FunctionDeclNode::Compile()
 void IfStmt::Compile()
 {
 	Expr->Compile();
-	if (Expr->HasStaticValue && Expr->Value > 0) {
+	if (Expr->HasStaticValue && Expr->Value > 0)
+	{
 		// Always true => skip else
 	}
-	else if (Expr->HasTargetRegister) {
-		if (Expr->Size == 1) {
+	else if (Expr->HasTargetRegister)
+	{
+		if (Expr->Size == 1)
+		{
 			// Assign to a
 			WriteLoad(ERegister::A, Expr->TargetRegister);
 			WriteLn("\tor\ta");
 		}
-		else if (Expr->Size == 2){
+		else if (Expr->Size == 2)
+		{
 			// Assign to hl
 			WriteLoad(ERegister::HL, Expr->TargetRegister);
 			WriteLn("\tld\ta, h");
@@ -42,7 +52,8 @@ void IfStmt::Compile()
 		}
 	}
 
-	if (FalseStmts->HasChildren()) {
+	if (FalseStmts->HasChildren())
+	{
 		WriteLn("\tjp\tnz, __if_else");
 		TrueStmts->Compile();
 		WriteLn("\tjp\t__if_end");
@@ -50,7 +61,8 @@ void IfStmt::Compile()
 		FalseStmts->Compile();
 		WriteLn("__if_end");
 	}
-	else {
+	else
+	{
 		WriteLn("\tjp\tnz, __if_end");
 		TrueStmts->Compile();
 		WriteLn("__if_end");
@@ -59,19 +71,23 @@ void IfStmt::Compile()
 
 void CompareExpr::Compile()
 {
-	if (Lhs->HasStaticValue && Rhs->HasStaticValue) {
-		if (Lhs->Value == Rhs->Value) {
+	if (Lhs->HasStaticValue && Rhs->HasStaticValue)
+	{
+		if (Lhs->Value == Rhs->Value)
+		{
 			Warn("Comparison is always true");
 			HasStaticValue = true;
 			Value = 1;
 		}
-		else {
+		else
+		{
 			Warn("Comparison is always false");
 			HasStaticValue = true;
 			Value = 0;
 		}
 	}
-	else {
+	else
+	{
 		Lhs->Compile();
 		if (Lhs->HasTargetRegister && Lhs->TargetRegister == ERegister::HL) {
 			WriteLn("\tpush\thl");
@@ -79,7 +95,8 @@ void CompareExpr::Compile()
 		Rhs->Compile();
 		// TODO
 
-		if (Lhs->HasTargetRegister) {
+		if (Lhs->HasTargetRegister)
+		{
 			// Assign LHS to a
 			WriteLoad(ERegister::A, Lhs->TargetRegister);
 			WriteLn("\tcp\t%s", Rhs->Target.c_str());

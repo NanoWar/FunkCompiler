@@ -1,4 +1,5 @@
 %{
+
 #define YY_DECL extern "C" int yylex()
 #include "Global.h"
 #include "AST.h"
@@ -34,10 +35,15 @@
 %x blockcomment
 %x include
 %x suffix
+%x asm
 
 name [a-zA-Z\x80-\xff_][a-zA-Z0-9\x80-\xff_]*[\!\?]?
 
 %%
+
+asm[ \t\n\r]*\{	{ BEGIN(asm); }
+<asm>[^\}]*		{ yymore(); }
+<asm>\}			{ BEGIN(INITIAL); *(yytext+yyleng-1) = 0; return tASM; }
 
 <suffix>{name}	{ BEGIN(INITIAL); }
 <suffix>(.|\n)	{ yyless(0); BEGIN(INITIAL); }
@@ -119,7 +125,7 @@ ix			{ return REG_IX; }
 iy			{ return REG_IY; }
 af'			{ return REG_AFS; }
 
-{name}		{ return NAME; }
+{name}			{ return NAME; }
 
 0x[0-9a-fA-F_]+	{ BEGIN(suffix); return tINTEGER; }
 0o[0-8_]+		{ BEGIN(suffix); return tINTEGER; }
@@ -127,7 +133,7 @@ af'			{ return REG_AFS; }
 [0-9][0-9_]*	{ BEGIN(suffix); return tINTEGER; }
 
 \x27							{ BEGIN(chars); yymore(); yytext++; }
-<chars>\x27						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return tCHARS; }
+<chars>\x27						{ BEGIN(suffix); *(yytext+yyleng-1) = 0; return tCHARS; }
 <chars><<EOF>>					{ return -1; }
 <chars>\\[n\nrt\\\x27\x220]		{ yymore(); }
 <chars>\\x[0-9a-fA-F]{2}		{ yymore(); }
@@ -136,7 +142,7 @@ af'			{ return REG_AFS; }
 <chars>(.|\n)					{ yymore(); }
 
 \x22							{ BEGIN(str); yymore(); yytext++; }
-<str>\x22						{ BEGIN(suffix); *(yytext+yyleng-1) = '\0'; return tSTRING; }
+<str>\x22						{ BEGIN(suffix); *(yytext+yyleng-1) = 0; return tSTRING; }
 <str><<EOF>>					{ return -1; }
 <str>\\[n\nrt\\\x27\x220]		{ yymore(); }
 <str>\\x[0-9a-fA-F]{2}			{ yymore(); }

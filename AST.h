@@ -122,6 +122,16 @@ class StatementNode : public Node
 public:
 };
 
+class AsmNode : public StatementNode
+{
+public:
+	string Text;
+
+	AsmNode(string text) : Text(text) { }
+
+	void Compile();
+};
+
 class StatementsNode : public ContainerNode < StatementsNode, StatementNode >
 {
 public:

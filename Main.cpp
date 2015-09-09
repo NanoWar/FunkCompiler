@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	}
 
 	SetConsoleAttributes(Console::WHITE);
-	Print("Funk Z80 ASM pre-compiler 1.0");
+	Print("Funk Z80 ASM Transcompiler 1.0");
 	if (verbose) Print("-> verbose mode");
 	if (yydebug) Print("-> debug mode");
 	RestoreConsoleAttributes();

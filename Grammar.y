@@ -37,7 +37,7 @@ extern StatementsNode *Program;
 %type <str> name
 %type <ident> ident
 %type <stmts> stmts program else
-%type <stmt> stmt mod fn_decl fn_call assign if
+%type <stmt> stmt asm mod fn_decl fn_call assign if
 %type <exprs> exprs
 %type <expr> expr
 %type <fn_decl_params> fn_decl_params
@@ -54,8 +54,7 @@ extern StatementsNode *Program;
 %token <token> DOTDOT DOTDOTDOT MOD_SEP
 %token <token> RARROW FAT_ARROW
 
-%token <str> tINTEGER
-%token <str> tCHARS tSTRING NAME
+%token <str> tINTEGER tCHARS tSTRING NAME tASM
 
 // Keywords
 %token <token> LET IF ELIF ELSE MATCH LOOP END RETURN
@@ -96,11 +95,16 @@ stmts
 ;
 
 stmt
-: mod
+: asm
+| mod
 | fn_decl
 | fn_call
 | assign
 | if
+;
+
+asm
+: tASM						{ $$ = new AsmNode(string(yytext)); }
 ;
 
 mod
