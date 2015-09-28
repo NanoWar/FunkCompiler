@@ -384,6 +384,30 @@ class ParametersNode : public ContainerNode < ParametersNode, ParameterNode >
 public:
 };
 
+class ResultNode : public Node
+{
+public:
+	ERegister Register;
+
+	ResultNode(ERegister reg)
+		: Register(reg)
+	{
+	}
+
+	ResultNode(string *name, ERegister reg)
+		: Register(reg)
+	{
+		Name = *name;
+	}
+
+	void Compile();
+};
+
+class ResultsNode : public ContainerNode < ResultsNode, ResultNode >
+{
+public:
+};
+
 class OutputNode : public Node
 {
 public:
@@ -406,7 +430,7 @@ public:
 		Ident->Parent = this;
 		Parameters->Parent = this;
 	}
-	
+
 	~FunctionCallStmt()
 	{
 		delete Ident;
@@ -421,21 +445,24 @@ class FunctionDeclNode : public StatementNode
 public:
 	ParametersNode *Parameters;
 	StatementsNode *Statements;
+	ResultsNode *Results;
 	RegisterUsage RegisterUsage;
 
-	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements)
-		: Parameters(parameters), Statements(statements),
+	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements, ResultsNode *results)
+		: Parameters(parameters), Statements(statements), Results(results),
 		StatementNode()
 	{
 		Name = *name;
 		parameters->Parent = this;
 		statements->Parent = this;
+		results->Parent = this;
 	}
 
 	~FunctionDeclNode()
 	{
 		delete Parameters;
 		delete Statements;
+		delete Results;
 	}
 
 	void Evaluate();
@@ -465,6 +492,48 @@ public:
 	}
 
 	void Evaluate();
+	void Compile();
+};
+
+
+class SaveListNode : public StatementNode
+{
+public:
+	vector<ERegister> Registers;
+	vector<IdentExpr *> Idents;
+
+	SaveListNode() : StatementNode() { }
+
+	SaveListNode *Extend(ERegister reg) { Registers.push_back(reg); return this; }
+	SaveListNode *Extend(IdentExpr *ident) { Idents.push_back(ident); ident->Parent = this; return this; }
+
+	~SaveListNode()
+	{
+		for (auto ident = Idents.begin(); ident != Idents.end(); ++ident) {
+			delete *ident;
+		}
+	}
+};
+
+class SaveStmt : public StatementNode
+{
+public:
+	SaveListNode *SaveList;
+	StatementsNode *Statements;
+
+	SaveStmt(SaveListNode *save_list, StatementsNode *stmts)
+		: SaveList(save_list), Statements(stmts)
+	{
+		SaveList->Parent = this;
+		Statements->Parent = this;
+	}
+
+	~SaveStmt()
+	{
+		delete SaveList;
+		delete Statements;
+	}
+
 	void Compile();
 };
 

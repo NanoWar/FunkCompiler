@@ -1,4 +1,5 @@
 Debug/
+Release/
 Grammar.tab.cpp
 Grammar.tab.h
 Lexer.flex.cpp

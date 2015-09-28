@@ -2,6 +2,7 @@
 
 #include "AST.h"
 #include "Console.h"
+#include "Register.h"
 
 RegisterUsage *Node::GetRegisterUsage()
 {
@@ -14,6 +15,6 @@ RegisterUsage *Node::GetRegisterUsage()
 		}
 		node = node->Parent;
 	}
-	Error("AST corrupt, no scope found");
+	Error("AST corrupt, no register scope found");
 	return NULL;
 }

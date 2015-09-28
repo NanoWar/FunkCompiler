@@ -145,7 +145,15 @@ int main(int argc, char **argv)
 
 	// Safety flush
 	fflush(output_file);
-
+	
+	// Clean up files
+	fclose(yyin);
+	fclose(output_file);
+	if (tmp_file) {
+		remove(tmp_file);
+	}
+	for(auto it = buffers.begin(); it != buffers.end(); ++it) delete[] *it;
+	
 	if (errors)
 	{
 		SetConsoleAttributes(Console::RED);
@@ -157,14 +165,6 @@ int main(int argc, char **argv)
 		Print("Success!");
 	}
 	RestoreConsoleAttributes();
-	
-	// Clean up files
-	fclose(yyin);
-	fclose(output_file);
-	if (tmp_file) {
-		remove(tmp_file);
-	}
-	for(auto it = buffers.begin(); it != buffers.end(); ++it) delete[] *it;
 	
 	Trace("It took %.2f seconds", std::chrono::duration_cast<chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() / 1000.0);
 	return yyparse_ret;

@@ -29,6 +29,9 @@ extern StatementsNode *Program;
  FunctionDeclNode *fn_decl;
  ParametersNode *fn_decl_params;
  ParameterNode *fn_decl_param;
+ ResultsNode *fn_decl_results;
+ ResultNode *fn_decl_result;
+ SaveListNode *save_list;
 }
 
 %debug
@@ -36,13 +39,16 @@ extern StatementsNode *Program;
 
 %type <str> name
 %type <ident> ident
+%type <reg> reg
 %type <stmts> stmts program else
-%type <stmt> stmt asm mod fn_decl fn_call assign if
+%type <stmt> stmt asm mod fn_decl fn_call assign if save
 %type <exprs> exprs
 %type <expr> expr
 %type <fn_decl_params> fn_decl_params
 %type <fn_decl_param> fn_decl_param
-%type <reg> reg
+%type <fn_decl_results> fn_decl_results_maybe fn_decl_results
+%type <fn_decl_result> fn_decl_result
+%type <save_list> save_list
 
 
 %token <token> SHL SHR
@@ -57,7 +63,7 @@ extern StatementsNode *Program;
 %token <str> tINTEGER tCHARS tSTRING NAME tASM
 
 // Keywords
-%token <token> LET IF ELIF ELSE MATCH LOOP END RETURN
+%token <token> LET IF ELIF ELSE MATCH LOOP END RETURN SAVE
 %token <token> MOD FN ENUM STRUCT
 %token <token> tTRUE tFALSE
 
@@ -101,6 +107,7 @@ stmt
 | fn_call
 | assign
 | if
+| save
 ;
 
 asm
@@ -112,7 +119,7 @@ mod
 ;
 
 fn_decl
-: FN name '(' fn_decl_params ')' '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_decl_params>4, $<stmts>7); delete $2;}
+: FN name '(' fn_decl_params ')' fn_decl_results_maybe '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_decl_params>4, $<stmts>8, $<fn_decl_results>6); delete $2;}
 ;
 fn_decl_params
 : /* empty */				        { $$ = new ParametersNode(); }
@@ -120,7 +127,19 @@ fn_decl_params
 | fn_decl_params ',' fn_decl_param	{ $$ = $<fn_decl_params>1->Extend($<fn_decl_param>3); }
 ;
 fn_decl_param
-: name ':' reg				{ $$ = new ParameterNode($<str>1, $<reg>3); delete $1; }
+: name ':' reg						{ $$ = new ParameterNode($<str>1, $<reg>3); delete $1; }
+;
+fn_decl_results_maybe
+: /* empty */							{ $$ = new ResultsNode(); }
+| RARROW fn_decl_results				{ $$ = $<fn_decl_results>2; }
+;
+fn_decl_results
+: fn_decl_result						{ $$ = new ResultsNode(); $$->Extend($<fn_decl_result>1); }
+| fn_decl_results ',' fn_decl_result	{ $$ = $<fn_decl_results>1->Extend($<fn_decl_result>3); }
+;
+fn_decl_result
+: name ':' reg							{ $$ = new ResultNode($<str>1, $<reg>3); delete $1; }
+| reg									{ $$ = new ResultNode($<reg>1); }
 ;
 
 fn_call
@@ -139,6 +158,17 @@ if
 else 
 : /* empty */					{ $$ = new StatementsNode(); }
 | ELSE '{' stmts '}'			{ $$ = $<stmts>3; }
+;
+
+save
+: SAVE save_list '{' stmts '}'	{ $$ = new SaveStmt($<save_list>2, $<stmts>4); }
+;
+
+save_list
+: reg							{ $$ = new SaveListNode(); $$->Extend($<reg>1); }
+| ident							{ $$ = new SaveListNode(); $$->Extend($<ident>1);}
+| save_list ',' reg				{ $$ = $<save_list>1->Extend($<reg>3); }
+| save_list ',' ident			{ $$ = $<save_list>1->Extend($<ident>3); }
 ;
 
 

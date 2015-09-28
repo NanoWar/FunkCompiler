@@ -82,10 +82,10 @@ Node *IdentExpr::GetReferenced()
 		// Next
 		parent = parent->Parent;
 	}
-
+	
+	// Try parallel paths
 	if(node == NULL && path.size() > names.size())
 	{
-		// Try parallel paths
 		reverse(path.begin(), path.end()); // down
 		// For each path segment
 		vector<string> progress;

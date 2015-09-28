@@ -87,6 +87,7 @@ if 			{ return IF; }
 elif		{ return ELIF; }
 else 		{ return ELSE; }
 loop 		{ return LOOP; }
+save		{ return SAVE; }
 return 		{ return RETURN; }
 
 fn 			{ return FN; }

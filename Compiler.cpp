@@ -24,6 +24,11 @@ void FunctionDeclNode::Compile()
 		WriteLn(";Inputs:");
 		Parameters->Compile();
 	}
+	if (Results->HasChildren())
+	{
+		WriteLn(";Outputs:");
+		Results->Compile();
+	}
 	Statements->Compile();
 	WriteLn("\tret");
 }
@@ -106,7 +111,12 @@ void CompareExpr::Compile()
 
 void ParameterNode::Compile()
 {
-	WriteLn(";  %s = %s", RegisterStringMap[Register].c_str(), Name.c_str());
+	WriteLn(";  %s = %s", RSMx(Register), Name.c_str());
+}
+
+void ResultNode::Compile()
+{
+	WriteLn(";  %s = %s", RSMx(Register), Name.c_str());
 }
 
 void IndirectionExpr::Compile()
@@ -329,5 +339,50 @@ void AssignStmt::Compile()
 	else
 	{
 		Definitions[Lhs->GetIdentifier()] = Rhs->Target;
+	}
+}
+
+void SaveStmt::Compile()
+{
+	vector<ERegister> saved_registers;
+	for (auto ident = SaveList->Idents.begin(); ident != SaveList->Idents.end(); ++ident)
+	{
+		auto ref = (*ident)->GetReferenced();
+		if (auto assign = dynamic_cast<AssignStmt *>(ref))
+		{
+			if (assign->Rhs->HasTargetRegister)
+			{
+				saved_registers.push_back(assign->Rhs->TargetRegister);
+				WriteLn("\tpush\t%s", RSMx(assign->Rhs->TargetRegister));
+			}
+			else
+			{
+				Error("Cannot save <%s> because it has no attached register", (*ident)->GetName().c_str());
+			}
+		}
+		else if (auto parameter = dynamic_cast<ParameterNode *>(ref))
+		{
+			saved_registers.push_back(parameter->Register);
+			WriteLn("\tpush\t%s", RSMx(parameter->Register));
+		}
+		else
+		{
+			Warn("Cannot resolve reference <%s>", (*ident)->GetName().c_str());
+		}
+	}
+	for (auto reg = SaveList->Registers.begin(); reg != SaveList->Registers.end(); ++reg)
+	{
+		saved_registers.push_back(*reg);
+		WriteLn("\tpush\t%s", RSMx(*reg));
+	}
+
+	//TODO: Open new register scope
+
+	// Compile inner statements
+	Statements->Compile();
+
+	for (auto reg = saved_registers.crbegin(); reg != saved_registers.crend(); ++reg)
+	{
+		WriteLn("\tpop\t%s", RSMx(*reg));
 	}
 }

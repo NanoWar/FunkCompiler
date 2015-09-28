@@ -34,8 +34,10 @@ extern map<ERegister, string> RegisterStringMap;
 
 struct RegisterUsageInfo
 {
-	ERegisterUsage Usage = ERegisterUsage::FREE;
-	int Value = 0;
+	ERegisterUsage Usage;
+	int Value;
+
+	RegisterUsageInfo() : Usage(ERegisterUsage::FREE), Value(0) { }
 
 	RegisterUsageInfo Combine(RegisterUsageInfo other, bool otherIsLow = true)
 	{
