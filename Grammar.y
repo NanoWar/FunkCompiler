@@ -21,8 +21,10 @@ extern StatementsNode *Program;
  string *str;
  ExpressionsNode *exprs;
  ExpressionNode *expr;
+ FunctionCallExpr *fn_call;
  ERegister reg;
  IdentExpr *ident;
+ IdentRegExpr *ident_reg;
  StatementsNode *stmts;
  StatementNode *stmt;
  ModuleNode *mod;
@@ -40,10 +42,12 @@ extern StatementsNode *Program;
 %type <str> name
 %type <ident> ident
 %type <reg> reg
+%type <ident_reg> ident_reg
 %type <stmts> stmts program else
-%type <stmt> stmt asm mod fn_decl fn_call assign if save
+%type <stmt> stmt asm mod fn_decl assign if save returns
 %type <exprs> exprs
 %type <expr> expr
+%type <fn_call> fn_call
 %type <fn_decl_params> fn_decl_params
 %type <fn_decl_param> fn_decl_param
 %type <fn_decl_results> fn_decl_results_maybe fn_decl_results
@@ -104,10 +108,11 @@ stmt
 : asm
 | mod
 | fn_decl
-| fn_call
+| fn_call			{ $$ = new FunctionCallStmt($<fn_call>1); }
 | assign
 | if
 | save
+| returns
 ;
 
 asm
@@ -143,12 +148,13 @@ fn_decl_result
 ;
 
 fn_call
-: ident '(' exprs ')'		{ $$ = new FunctionCallStmt($<ident>1, $<exprs>3); }
+: ident '(' exprs ')'		{ $$ = new FunctionCallExpr($<ident>1, $<exprs>3); }
 ;
 
 assign
 : reg '=' expr				{ $$ = new AssignStmt($<reg>1, $<expr>3); }
 | ident '=' expr			{ $$ = new AssignStmt($<ident>1, $<expr>3); }
+| ident_reg '=' expr		{ $$ = new AssignStmt($<ident_reg>1, $<expr>3); }
 ;
 
 if
@@ -171,6 +177,10 @@ save_list
 | save_list ',' ident			{ $$ = $<save_list>1->Extend($<ident>3); }
 ;
 
+returns
+: RETURN exprs					{ $$ = new ReturnNode($<exprs>2); }
+;
+
 
 ////////////////////////////////////////////////////////////////////////
 // EXPRESSIONS
@@ -182,7 +192,8 @@ exprs
 | exprs ',' expr			{ $$ = $<exprs>1->Extend($<expr>3); }
 
 expr
-: ident
+: ident						{ $$ = $<ident>1; }
+| fn_call					{ $$ = $<fn_call>1; }
 | tINTEGER					{ $$ = new NumberExpr(string(yytext)); }
 | tCHARS					{ $$ = new CharsExpr(string(yytext)); }
 | tSTRING					{ $$ = new StringExpr(string(yytext)); }
@@ -214,6 +225,10 @@ name
 ident
 : name					{ $$ = new IdentExpr(*$<str>1); delete $1; }
 | ident '.' name		{ $<ident>1->Extend($<str>3); }
+;
+
+ident_reg
+: name ':' reg			{ $$ = new IdentRegExpr(*$<str>1, $<reg>3); delete $1; }
 ;
 
 reg

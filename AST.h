@@ -164,6 +164,15 @@ public:
 		return false;
 	}
 
+	void SetTargetRegister(ERegister reg)
+	{
+		TargetRegister = reg;
+		HasTargetRegister = true;
+		Size = REG_SIZE(reg);
+		//TODO: this should not be set:
+		Target = RegisterStringMap[reg];
+	}
+
 	virtual void Compile() { }
 };
 
@@ -172,17 +181,48 @@ class ExpressionsNode : public ContainerNode < ExpressionsNode, ExpressionNode >
 public:
 };
 
+// Expression wrapper in statement
+class ExpressionStmt : public StatementNode
+{
+public:
+	ExpressionNode *Expr;
+
+	ExpressionStmt(ExpressionNode *expr) : Expr(expr)
+	{
+		Expr->Parent = this;
+	}
+
+	~ExpressionStmt()
+	{
+		delete Expr;
+	}
+
+	void Compile() { Expr->Compile(); }
+};
+
 class IdentExpr : public VectorNode < IdentExpr, string, ExpressionNode >
 {
 public:
 	IdentExpr(string ident)
 	{
 		Name = ident;
-		Size = 2;
+		Size = 2; // TODO: check if 2 is good default
 	}
 	Node *GetReferenced();
 	string GetName();
 	void Compile();
+};
+
+class IdentRegExpr : public IdentExpr
+{
+public:
+	IdentRegExpr(string name, ERegister reg)
+		: IdentExpr(name)
+	{
+		HasTargetRegister = true;
+		TargetRegister = reg;
+		Size = REG_SIZE(reg);
+	}
 };
 
 class NumberExpr : public ExpressionNode
@@ -304,7 +344,7 @@ public:
 		HasTargetRegister = true;
 		TargetRegister = reg;
 		Target = RegisterStringMap[reg];
-		Size = IS_SMALL(reg) ? 1 : 2;
+		Size = REG_SIZE(reg);
 		//Trace("Register %s in line %d", Target.c_str(), SourceLine);
 	}
 };
@@ -418,26 +458,37 @@ class OutputsNode : public ContainerNode < OutputsNode, OutputNode >
 public:
 };
 
-class FunctionCallStmt : public StatementNode
+class FunctionCallExpr : public ExpressionNode
 {
 public:
 	IdentExpr *Ident;
 	ExpressionsNode *Parameters;
 
-	FunctionCallStmt(IdentExpr *ident, ExpressionsNode *parameters)
-		: Ident(ident), Parameters(parameters)
+	FunctionCallExpr(IdentExpr *ident, ExpressionsNode *parameters)
+		: Ident(ident), Parameters(parameters),
+		ExpressionNode()
 	{
 		Ident->Parent = this;
 		Parameters->Parent = this;
 	}
 
-	~FunctionCallStmt()
+	~FunctionCallExpr()
 	{
 		delete Ident;
 		delete Parameters;
 	}
 
 	void Compile();
+};
+
+// Function call without return parameters
+class FunctionCallStmt : public ExpressionStmt
+{
+public:
+	FunctionCallStmt(FunctionCallExpr *functionCall)
+		: ExpressionStmt(functionCall)
+	{
+	}
 };
 
 class FunctionDeclNode : public StatementNode
@@ -537,5 +588,23 @@ public:
 	void Compile();
 };
 
+class ReturnNode : public StatementNode
+{
+public:
+	ExpressionsNode *Exprs;
+
+	ReturnNode(ExpressionsNode *exprs)
+		: Exprs(exprs), StatementNode()
+	{
+		Exprs->Parent = this;
+	}
+
+	~ReturnNode()
+	{
+		delete Exprs;
+	}
+
+	void Compile();
+};
 
 #endif

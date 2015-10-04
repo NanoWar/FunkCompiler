@@ -24,6 +24,11 @@ bool RegisterId(Node *node)
 
 void AssignStmt::Evaluate()
 {
+	if(dynamic_cast<IdentRegExpr *>(Lhs))
+	{
+		RegisterId(Lhs);
+	}
+
 	if (!Lhs->HasTargetRegister)
 	{
 		RegisterId(Lhs);

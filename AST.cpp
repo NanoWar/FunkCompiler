@@ -4,17 +4,20 @@
 #include "Console.h"
 #include "Register.h"
 
+FunctionDeclNode *GetParentFunctionNode(Node *start)
+{
+	while (start)
+	{
+		if (dynamic_cast<FunctionDeclNode *>(start))
+		{
+			return (FunctionDeclNode *)start;
+		}
+		start = start->Parent;
+	}
+	return NULL;
+}
+
 RegisterUsage *Node::GetRegisterUsage()
 {
-	Node *node = this;
-	while (node)
-	{
-		if (dynamic_cast<FunctionDeclNode *>(node))
-		{
-			return &(((FunctionDeclNode *)node)->RegisterUsage);
-		}
-		node = node->Parent;
-	}
-	Error("AST corrupt, no register scope found");
-	return NULL;
+	return &(GetParentFunctionNode(this)->RegisterUsage);
 }

@@ -26,6 +26,7 @@ enum ERegisterUsage
 #define LO_REG(reg) SPLIT_REGISTER(reg, 1)
 #define IS_SMALL(reg) (reg > ERegister::NONE && reg < REGISTER_BIG)
 #define IS_BIG(reg) (reg >= REGISTER_BIG && reg < ERegister::MAX)
+#define REG_SIZE(reg) (IS_SMALL(reg) ? 1 : 2)
 
 extern map<ERegister, string> RegisterStringMap;
 

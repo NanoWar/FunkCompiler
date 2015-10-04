@@ -11,7 +11,12 @@
 
 void AsmNode::Compile()
 {
-	WriteLn(Text.c_str());
+	fputs(Text.c_str(), output_file);
+	fputs("\n", output_file);
+}
+
+void ReturnNode::Compile()
+{
 }
 
 void FunctionDeclNode::Compile()
@@ -116,7 +121,14 @@ void ParameterNode::Compile()
 
 void ResultNode::Compile()
 {
-	WriteLn(";  %s = %s", RSMx(Register), Name.c_str());
+	if(Name.empty())
+	{
+		WriteLn(";  %s", RSMx(Register));
+	}
+	else
+	{
+		WriteLn(";  %s = %s", RSMx(Register), Name.c_str());
+	}
 }
 
 void IndirectionExpr::Compile()
@@ -194,35 +206,43 @@ void PlusExpr::Compile()
 	}
 }
 
-void FunctionCallStmt::Compile()
+void FunctionCallExpr::Compile()
 {
 	Ident->Compile();
-	Parameters->Compile();
 
 	// Find declaration
-	auto decl = Ident->GetReferenced();
-	if (dynamic_cast<FunctionDeclNode*>(decl))
+	auto decl = dynamic_cast<FunctionDeclNode*>(Ident->GetReferenced());
+	if (!decl)
 	{
-		auto decl_params = ((FunctionDeclNode*)decl)->Parameters;
-		if (decl_params->Children.size() != Parameters->Children.size())
-		{
-			Warn("Parameter mismatch of function <%s> in line %d", decl->GetIdentifier().c_str(), SourceLine);
-		}
-		else
-		{
-			for (unsigned int i = 0; i < Parameters->Children.size(); i++)
-			{
-				auto assign = new AssignStmt(decl_params->Children[i]->Register, Parameters->Children[i]);
-				assign->Parent = this;
-				assign->Compile();
-			}
-		}
-		WriteLn("\tcall\t%s", decl->GetIdentifier().c_str());
+		// Fall back
+		WriteLn("\tcall\t%s", Ident->GetName().c_str());
+		return;
+	}
+
+	auto decl_params = decl->Parameters;
+	if (decl_params->Children.size() != Parameters->Children.size())
+	{
+		Warn("Parameter mismatch of function <%s> in line %d", decl->GetIdentifier().c_str(), SourceLine);
 	}
 	else
 	{
-		WriteLn("\tcall\t%s", Ident->GetName().c_str());
+		// Parameters are compiled here (inside assign)
+		for (unsigned int i = 0; i < Parameters->Children.size(); i++)
+		{
+			auto assign = new AssignStmt(decl_params->Children[i]->Register, Parameters->Children[i]);
+			assign->Parent = this;
+			assign->Compile();
+		}
+
+		auto returns = decl->Results->Children;
+		if(returns.size() == 1)
+		{
+			HasTargetRegister = true;
+			TargetRegister = returns[0]->Register;
+			Size = REG_SIZE(TargetRegister);
+		}
 	}
+	WriteLn("\tcall\t%s", decl->GetIdentifier().c_str());
 }
 
 void IdentExpr::Compile()
@@ -268,12 +288,13 @@ void IdentExpr::Compile()
 	}
 	else 
 	{
-		if (dynamic_cast<ParameterNode*>(ref))
+		if (auto parameter = dynamic_cast<ParameterNode *>(ref))
 		{
-			TargetRegister = ((ParameterNode*)ref)->Register;
-			HasTargetRegister = true;
-			//TODO: this should not be set:
-			Target = RegisterStringMap[TargetRegister];
+			SetTargetRegister(parameter->Register);
+		}
+		if( auto ident_reg = dynamic_cast<IdentRegExpr *>(ref))
+		{
+			SetTargetRegister(ident_reg->TargetRegister);
 		}
 		else
 		{
@@ -364,6 +385,11 @@ void SaveStmt::Compile()
 		{
 			saved_registers.push_back(parameter->Register);
 			WriteLn("\tpush\t%s", RSMx(parameter->Register));
+		}
+		else if (auto new_ident = dynamic_cast<IdentRegExpr *>(ref))
+		{
+			saved_registers.push_back(new_ident->TargetRegister);
+			WriteLn("\tpush\t%s", RSMx(new_ident->TargetRegister));
 		}
 		else
 		{
