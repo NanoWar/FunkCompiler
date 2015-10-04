@@ -50,6 +50,11 @@ void ParameterNode::Evaluate()
 	RegisterId(this);
 }
 
+void ResultNode::Evaluate()
+{
+	RegisterId(this);
+}
+
 void ModuleNode::Evaluate()
 {
 	Statements->Evaluate();
@@ -59,5 +64,6 @@ void FunctionDeclNode::Evaluate()
 {
 	RegisterId(this);
 	Parameters->Evaluate();
+	Results->Evaluate();
 	Statements->Evaluate();
 }

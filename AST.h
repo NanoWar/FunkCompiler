@@ -440,6 +440,7 @@ public:
 		Name = *name;
 	}
 
+	void Evaluate();
 	void Compile();
 };
 

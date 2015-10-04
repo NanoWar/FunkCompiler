@@ -292,7 +292,11 @@ void IdentExpr::Compile()
 		{
 			SetTargetRegister(parameter->Register);
 		}
-		if( auto ident_reg = dynamic_cast<IdentRegExpr *>(ref))
+		else if( auto result = dynamic_cast<ResultNode *>(ref))
+		{
+			SetTargetRegister(result->Register);
+		}
+		else if( auto ident_reg = dynamic_cast<IdentRegExpr *>(ref))
 		{
 			SetTargetRegister(ident_reg->TargetRegister);
 		}
@@ -385,6 +389,11 @@ void SaveStmt::Compile()
 		{
 			saved_registers.push_back(parameter->Register);
 			WriteLn("\tpush\t%s", RSMx(parameter->Register));
+		}
+		else if (auto result = dynamic_cast<ResultNode *>(ref))
+		{
+			saved_registers.push_back(result->Register);
+			WriteLn("\tpush\t%s", RSMx(result->Register));
 		}
 		else if (auto new_ident = dynamic_cast<IdentRegExpr *>(ref))
 		{
