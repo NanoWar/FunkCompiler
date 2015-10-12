@@ -10,6 +10,7 @@
 #include <typeinfo>
 
 class Node;
+class FunctionDeclNode;
 
 extern map<Node*, string> NodeToString;
 extern map<string, Node*> StringToNode;
@@ -32,6 +33,7 @@ public:
 	virtual void Evaluate() { }
 	virtual void Compile() { }
 
+	FunctionDeclNode *GetFunctionScope();
 	RegisterUsage *GetRegisterUsage();
 };
 
@@ -492,13 +494,20 @@ public:
 	}
 };
 
-class FunctionDeclNode : public StatementNode
+class Scope
+{
+public:
+	RegisterUsage RegisterUsage;
+	int Counter;
+	Scope() : Counter(0) { }
+};
+
+class FunctionDeclNode : public StatementNode, public Scope
 {
 public:
 	ParametersNode *Parameters;
 	StatementsNode *Statements;
 	ResultsNode *Results;
-	RegisterUsage RegisterUsage;
 
 	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements, ResultsNode *results)
 		: Parameters(parameters), Statements(statements), Results(results),

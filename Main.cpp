@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 		Print("\nUsage:\n  [options] <input file> <output file>\n");
 		Print("  -v         Verbose mode (show additional output)");
 		Print("  -q         Quiet mode (supress all console output)");
-		Print("  -x <code>  Execute code directly");
+		Print("  -x <code>  Execute code from command line");
 		Print("  -n         No colored console output");
 		Print("  -a         Interactive mode");
 		Print("  -d         Debug mode (show debug messages)");

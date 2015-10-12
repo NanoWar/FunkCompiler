@@ -4,20 +4,22 @@
 #include "Console.h"
 #include "Register.h"
 
-FunctionDeclNode *GetParentFunctionNode(Node *start)
+FunctionDeclNode *Node::GetFunctionScope()
 {
-	while (start)
+	Node *node = this;
+	while (node)
 	{
-		if (dynamic_cast<FunctionDeclNode *>(start))
+		if (dynamic_cast<FunctionDeclNode *>(node))
 		{
-			return (FunctionDeclNode *)start;
+			return (FunctionDeclNode *)node;
 		}
-		start = start->Parent;
+		node = node->Parent;
 	}
+	Error("Could not find function scope");
 	return NULL;
 }
 
 RegisterUsage *Node::GetRegisterUsage()
 {
-	return &(GetParentFunctionNode(this)->RegisterUsage);
+	return &(GetFunctionScope()->RegisterUsage);
 }

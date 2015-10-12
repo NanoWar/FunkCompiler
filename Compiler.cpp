@@ -17,6 +17,21 @@ void AsmNode::Compile()
 
 void ReturnNode::Compile()
 {
+	auto results = GetFunctionScope()->Results;
+	if(results->Children.size() != Exprs->Children.size())
+	{
+		Error("Return does not match function results");
+		return;
+	}
+	for(int i = 0; i < results->Children.size(); i++)
+	{
+		auto reg = results->Children[i]->Register;
+		auto expr = Exprs->Children[i];
+		auto assign = new AssignStmt(reg, expr);
+		assign->Parent = this;
+		assign->Compile();
+	}
+	WriteLn("\tret");
 }
 
 void FunctionDeclNode::Compile()
@@ -35,7 +50,10 @@ void FunctionDeclNode::Compile()
 		Results->Compile();
 	}
 	Statements->Compile();
-	WriteLn("\tret");
+	if(!(Statements->HasChildren() && dynamic_cast<ReturnNode*>(Statements->Children.back())))
+	{
+		WriteLn("\tret");
+	}
 }
 
 void IfStmt::Compile()
@@ -62,20 +80,24 @@ void IfStmt::Compile()
 		}
 	}
 
+	auto scope = GetFunctionScope();
+	auto s_counter = scope->Counter++;
+	auto s_name = scope->GetIdentifier();
+
 	if (FalseStmts->HasChildren())
 	{
-		WriteLn("\tjp\tnz, __if_else");
+		WriteLn("\tjp\tnz, %s.if%i_else", s_name.c_str(), s_counter);
 		TrueStmts->Compile();
-		WriteLn("\tjp\t__if_end");
-		WriteLn("__if_else");
+		WriteLn("\tjp\t%s.if%i_end", s_name.c_str(), s_counter);
+		WriteLn("%s.if%i_else", s_name.c_str(), s_counter);
 		FalseStmts->Compile();
-		WriteLn("__if_end");
+		WriteLn("%s.if%i_end", s_name.c_str(), s_counter);
 	}
 	else
 	{
-		WriteLn("\tjp\tnz, __if_end");
+		WriteLn("\tjp\tnz, %s.if%i_end", s_name.c_str(), s_counter);
 		TrueStmts->Compile();
-		WriteLn("__if_end");
+		WriteLn("%s.if%i_end", s_name.c_str(), s_counter);
 	}
 }
 
