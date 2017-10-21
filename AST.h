@@ -26,7 +26,7 @@ public:
 	{
 		Name = "";
 		Parent = NULL;
-		SourceLine = yylloc.first_line;
+		SourceLine = -1;
 	}
 
 	string GetIdentifier();
@@ -282,7 +282,7 @@ public:
 	{
 		Size = max(lhs->Size, rhs->Size);
 		lhs->Parent = this;
-		lhs->Parent = this;
+		rhs->Parent = this;
 	}
 
 	~PlusExpr()

@@ -57,11 +57,19 @@ int main(int argc, char **argv)
 		// Input file
 		else if (expect_input_file) {
 			expect_input_file = 0;
-			yyin = fopen(argv[i], "r");
+			char *file_path = argv[i];
+			yyin = fopen(file_path, "r");
 			if (!yyin) { Error("Could not open input file <%s>", argv[i]); return -1; }
-			char *file_name = SkipFolders(argv[i]);
+
+			char *file_name = SkipFolders(file_path);
+			if (file_path != file_name) {
+				*(file_name-1) = 0; // Cut
+				input_file_folder.assign(file_path).append("\\");
+			}
+			input_file_name_full.assign(file_name);
+
 			char *file_ext = SkipFileName(file_name);
-			if (file_name != file_ext) *(file_ext-1) = 0;
+			if (file_name != file_ext) *(file_ext-1) = 0; // Cut
 			input_file_name.assign(file_name);
 			input_file_ext.assign(file_ext);
 			input_file = yyin;
@@ -76,7 +84,7 @@ int main(int argc, char **argv)
 	}
 
 	SetConsoleAttributes(Console::WHITE);
-	Print("Funk Z80 ASM Transcompiler 1.0");
+	Print("Funk Z80 ASM Transpiler 1.0");
 	if (verbose) Print("-> verbose mode");
 	if (yydebug) Print("-> debug mode");
 	RestoreConsoleAttributes();
@@ -94,7 +102,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	
+
 	if (repl)
 	{
 		Trace("Reading from console input ...");
@@ -119,14 +127,14 @@ int main(int argc, char **argv)
 				output_file = fopen(output_file_name.c_str(), "w+");
 				if (!output_file) { Error("Could not create output file <%s>", output_file_name.c_str()); return -1; }
 			}
-			Print("Compiling \"%s\"", input_file_name.c_str());
+			Print("Compiling <%s>", input_file_name_full.c_str());
 		}
 		Trace("Parsing input");
 	}
 
 
 	// Parse
-	int yyparse_ret = yyparse();
+	int yyparse_ret = yyparse(input_file_name_full.c_str());
 	Trace("Parsing completed");
 
 	if (!yyparse_ret)
@@ -145,7 +153,7 @@ int main(int argc, char **argv)
 
 	// Safety flush
 	fflush(output_file);
-	
+
 	// Clean up files
 	fclose(yyin);
 	fclose(output_file);
@@ -153,7 +161,7 @@ int main(int argc, char **argv)
 		remove(tmp_file);
 	}
 	for(auto it = buffers.begin(); it != buffers.end(); ++it) delete[] *it;
-	
+
 	if (errors)
 	{
 		SetConsoleAttributes(Console::RED);
@@ -165,12 +173,12 @@ int main(int argc, char **argv)
 		Print("Success!");
 	}
 	RestoreConsoleAttributes();
-	
+
 	Trace("It took %.2f seconds", std::chrono::duration_cast<chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() / 1000.0);
 	return yyparse_ret;
 }
 
-void yyerror(char const *s) {
+void yyerror(const char *file_name, char const *error) {
 	errors++;
-	Error("%s in line %d", s, yylineno);
+	Error("%s in file <%s> in line %d", error, yylloc.file_name.c_str(), yylineno);
 }

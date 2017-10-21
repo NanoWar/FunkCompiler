@@ -35,7 +35,7 @@ void AssignStmt::Evaluate()
 	}
 	else
 	{
-		GetRegisterUsage()->SetUsage(Lhs->TargetRegister, ERegisterUsage::USED);
+		GetRegisterUsage()->SetUsage(Lhs->TargetRegister, ERegisterUsage::USED, SourceLine);
 	}
 }
 

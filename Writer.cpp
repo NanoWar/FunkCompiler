@@ -4,6 +4,7 @@
 #include "Writer.h"
 
 char *S_LOAD = "\tld\t%s, %s";
+char *S_ADD = "\tadd\t%s, %s";
 char *S_ADD_A = "\tadd\ta, %s";
 char *S_DEFINE = "#define %s %s";
 

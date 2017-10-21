@@ -124,11 +124,11 @@ public:
 		}
 	}
 
-	void SetUsage(ERegister reg, ERegisterUsage usage, int value = 0)
+	void SetUsage(ERegister reg, ERegisterUsage usage, int line, int value = 0)
 	{
 		if (GetUsageInfo(reg).Usage != ERegisterUsage::FREE)
 		{
-			Warn("Register <%s> is already in use", RSMx(reg));
+			Warn(line, "Register <%s> is already in use", RSMx(reg));
 		}
 		RegisterUsageInfo info;
 		info.Usage = usage;

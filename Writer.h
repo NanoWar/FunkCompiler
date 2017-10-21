@@ -5,6 +5,7 @@
 #include "Register.h"
 
 extern char *S_LOAD;
+extern char *S_ADD;
 extern char *S_ADD_A;
 extern char *S_DEFINE;
 

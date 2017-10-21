@@ -63,6 +63,9 @@
     <ClCompile Include="AST.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="Lexer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Flex Include="Lexer.l">
@@ -106,6 +109,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="Hash.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Lexer.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

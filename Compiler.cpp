@@ -201,19 +201,27 @@ void PlusExpr::Compile()
 			}
 			else 
 			{
-				WriteLn(S_LOAD, RSM(A), Lhs->Target.c_str());
+				ERegister reg = Lhs->Size == 1 ? ERegister::A : ERegister::HL;
+				auto reg_s = RSMx(reg);
+				WriteLn(S_LOAD, reg_s, Lhs->Target.c_str());
 				if (Rhs->HasStaticValue && Rhs->Value == 1) 
 				{
-					WriteLn("\tinc\ta");
+					WriteLn("\tinc\t%s", reg_s);
+				}
+				else if (Rhs->HasStaticValue && Rhs->Value == 2) 
+				{
+					WriteLn("\tinc\t%s", reg_s);
+					WriteLn("\tinc\t%s", reg_s);
 				}
 				else
 				{
-					WriteLn(S_ADD_A, Rhs->Target.c_str());
+					WriteLn(S_ADD, reg_s, Rhs->Target.c_str());
 				}
-				TargetRegister = ERegister::A;
+				TargetRegister = reg;
 				HasTargetRegister = true;
 			}
 			//WriteLn("\tpop\taf");
+			// Copy
 			target << RegisterStringMap[TargetRegister];
 			Target = target.str();
 			Size = Lhs->Size;
@@ -244,7 +252,7 @@ void FunctionCallExpr::Compile()
 	auto decl_params = decl->Parameters;
 	if (decl_params->Children.size() != Parameters->Children.size())
 	{
-		Warn("Parameter mismatch of function <%s> in line %d", decl->GetIdentifier().c_str(), SourceLine);
+		Warn(SourceLine, "Parameter mismatch of function <%s>", decl->GetIdentifier().c_str());
 	}
 	else
 	{
@@ -304,7 +312,7 @@ void IdentExpr::Compile()
 		}
 		else
 		{
-			Warn("Cannot resolve id <%s>", name.c_str());
+			Warn(SourceLine, "Cannot resolve id <%s>", name.c_str());
 		}
 		Target = name;
 	}
@@ -340,7 +348,7 @@ void AssignStmt::Compile()
 		{
 			if (Lhs->Size != Rhs->Size)
 			{
-				Warn("Incompatible operation <ld %s, %s>", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
+				Warn(SourceLine, "Incompatible operation <ld %s, %s>", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
 			}
 			WriteLoad(Lhs->TargetRegister, Rhs->TargetRegister);
 		}

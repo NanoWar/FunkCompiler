@@ -1,9 +1,9 @@
 %{
 extern "C" int yylex();
-extern "C" int yyparse();
+extern "C" int yyparse(const char *file_name);
 extern char *yytext;
 
-void yyerror(const char *s);
+void yyerror(const char *file_name, const char *error);
 
 #include "Global.h"
 #include "AST.h"
@@ -14,6 +14,12 @@ void yyerror(const char *s);
 extern StatementsNode *Program;
 
 %}
+
+%parse-param { const char *file_name };
+%initial-action
+{
+  @$.file_name = file_name;
+};
 
 %union {
  void *unknown;
@@ -77,7 +83,7 @@ extern StatementsNode *Program;
 %token <reg> REG_A REG_F REG_B REG_C REG_D REG_E REG_H REG_L REG_IXH REG_IXL REG_IYH REG_IYL REG_I REG_R
 %token <reg> REG_AF REG_BC REG_DE REG_HL REG_IX REG_IY REG_AFS
 
-//%right '='
+%right EQEQ
 %left  '+' '-'
 %left  '*' '/'
 
@@ -108,7 +114,7 @@ stmt
 : asm
 | mod
 | fn_decl
-| fn_call			{ $$ = new FunctionCallStmt($<fn_call>1); }
+| fn_call			{ $$ = new FunctionCallStmt($<fn_call>1); $$->SourceLine = @$.first_line; }
 | assign
 | if
 | save
@@ -124,7 +130,7 @@ mod
 ;
 
 fn_decl
-: FN name '(' fn_decl_params ')' fn_decl_results_maybe '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_decl_params>4, $<stmts>8, $<fn_decl_results>6); delete $2;}
+: FN name '(' fn_decl_params ')' fn_decl_results_maybe '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_decl_params>4, $<stmts>8, $<fn_decl_results>6); delete $2; }
 ;
 fn_decl_params
 : /* empty */				        { $$ = new ParametersNode(); }
@@ -152,9 +158,9 @@ fn_call
 ;
 
 assign
-: reg '=' expr				{ $$ = new AssignStmt($<reg>1, $<expr>3); }
-| ident '=' expr			{ $$ = new AssignStmt($<ident>1, $<expr>3); }
-| ident_reg '=' expr		{ $$ = new AssignStmt($<ident_reg>1, $<expr>3); }
+: reg '=' expr				{ $$ = new AssignStmt($<reg>1, $<expr>3); $$->SourceLine = @$.first_line; }
+| ident '=' expr			{ $$ = new AssignStmt($<ident>1, $<expr>3); $$->SourceLine = @$.first_line; }
+| ident_reg '=' expr		{ $$ = new AssignStmt($<ident_reg>1, $<expr>3); $$->SourceLine = @$.first_line; }
 ;
 
 if
@@ -223,7 +229,7 @@ name
 ;
 
 ident
-: name					{ $$ = new IdentExpr(*$<str>1); delete $1; }
+: name					{ $$ = new IdentExpr(*$<str>1); delete $1; $$->SourceLine = @$.first_line; }
 | ident '.' name		{ $<ident>1->Extend($<str>3); }
 ;
 

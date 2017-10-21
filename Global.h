@@ -19,6 +19,8 @@ extern int verbose;
 extern int quiet;
 extern int repl;
 extern int no_colors;
+extern string input_file_folder;
+extern string input_file_name_full;
 extern string input_file_name;
 extern string input_file_ext;
 extern FILE *input_file;

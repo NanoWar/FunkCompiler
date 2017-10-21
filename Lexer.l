@@ -7,21 +7,12 @@
 #include "Console.h"
 #include "StringHelper.h"
 #include "Definitions.h"
+#include "Lexer.h"
 
 #include "Grammar.tab.h"
 
-#define YY_USER_ACTION \
-    yylloc.first_line = yylloc.last_line; \
-    yylloc.first_column = yylloc.last_column; \
-    for(int i = 0; yytext[i] != '\0'; i++) { \
-        if(yytext[i] == '\n') { \
-            yylloc.last_line++; \
-            yylloc.last_column = 1; \
-        } \
-        else { \
-            yylloc.last_column++; \
-        } \
-    }
+#define YY_USER_ACTION before_rule();
+#define YY_BREAK after_rule(); break;
 
 %}
 
@@ -48,7 +39,8 @@ asm[ \t\n\r]*\{	{ BEGIN(asm); }
 <suffix>{name}	{ BEGIN(INITIAL); }
 <suffix>(.|\n)	{ yyless(0); BEGIN(INITIAL); }
 
-[ \t\n\r] { }
+[ \t\r] { }
+[\n] { }
 
 \/\* 					{ yy_push_state(blockcomment); }
 <blockcomment>\*\/		{ yy_pop_state(); }
@@ -63,20 +55,25 @@ inc						{ BEGIN(include); }
 <include>[^ \t\n\r\x22][^\t\n\r]*\x22? {
 	if(*(yytext+yyleng-1) == '\x22') *(yytext+yyleng-1) = '\0';
 	Trace("Including file <%s>", yytext);
-	string fileName(yytext);
-	if(endsWith(fileName, ".z80")) {
-		LoadDefinitionsFile(fileName);
+	string file_path(input_file_folder);
+	file_path.append(yytext);
+	string file_name(yytext);
+	if(endsWith(file_name, ".z80")) {
+		LoadDefinitionsFile(file_path);
 	} else {
-		FILE *includeFile = fopen(yytext, "r");
+		FILE *includeFile = fopen(file_path.c_str(), "r");
 		if (!includeFile) {
-			Trace("Including file <%s.funk> instead", yytext);
-			includeFile = fopen(fileName.append(".funk").c_str(), "r");
+			file_name.append(".funk");
+			file_path.append(".funk");
+			Trace("Including file <%s> instead", file_name.c_str());
+			includeFile = fopen(file_path.c_str(), "r");
 		}
 		if (!includeFile) {
 			Error("Cannot open file <%s>", yytext);
 		} else {
 			yyin = includeFile;
 			yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+			yypush_location_state(file_name);
 		}
 	}
 	BEGIN(INITIAL);
@@ -209,6 +206,9 @@ af'			{ return REG_AFS; }
 	if (!YY_CURRENT_BUFFER) {
 		yyterminate();
 		return 0;
+	}
+	else {
+		yypop_location_state();
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include "Console.h"
 #include "AST.h"
+#include "Parser.h"
 
 #ifdef WIN32
 
@@ -9,11 +10,6 @@
 WORD user_attributes;
 
 #endif WIN32
-
-extern int verbose;
-extern int quiet;
-extern int errors;
-extern int no_colors;
 
 void RestoreConsoleAttributes()
 {
@@ -45,27 +41,11 @@ void SetConsoleAttributes(unsigned short attr)
 
 #define VPRINTF_ARGS(format) va_list args; va_start(args, format); vprintf(format, args); va_end(args);
 
-void TraceN(const char* format, ...) 
-{
-	if (!quiet && verbose) {
-		SetConsoleAttributes(Console::DARKGRAY);
-		VPRINTF_ARGS(format);
-		RestoreConsoleAttributes();
-	}
-}
-
 void Trace(const char* format, ...) {
 	if (!quiet && verbose) {
 		SetConsoleAttributes(Console::DARKGRAY);
 		VPRINTF_ARGS(format);
 		printf("\n");
-		RestoreConsoleAttributes();
-	}
-}
-void InfoN(const char* format, ...) {
-	if (!quiet) {
-		SetConsoleAttributes(Console::WHITE);
-		VPRINTF_ARGS(format);
 		RestoreConsoleAttributes();
 	}
 }
@@ -80,12 +60,13 @@ void Info(const char* format, ...)
 	}
 }
 
-void WarnN(const char* format, ...)
+void Warn(const int line, const char* format, ...)
 {
 	if (!quiet) {
 		SetConsoleAttributes(Console::YELLOW);
-		printf("Warning: ");
+		printf("Warning in line %d: ", line);
 		VPRINTF_ARGS(format);
+		printf("\n");
 		RestoreConsoleAttributes();
 	}
 }
@@ -96,17 +77,6 @@ void Warn(const char* format, ...) {
 		printf("Warning: ");
 		VPRINTF_ARGS(format);
 		printf("\n");
-		RestoreConsoleAttributes();
-	}
-}
-
-void ErrorN(const char* format, ...) 
-{
-	errors++;
-	if (!quiet) {
-		SetConsoleAttributes(Console::RED);
-		printf("Error: ");
-		VPRINTF_ARGS(format);
 		RestoreConsoleAttributes();
 	}
 }
@@ -123,17 +93,6 @@ void Error(const char* format, ...)
 	}
 }
 
-void FatalN(const char* format, ...)
-{
-	errors++;
-	if (!quiet) {
-		SetConsoleAttributes(Console::MAGENTA);
-		printf("Fatal: ");
-		VPRINTF_ARGS(format);
-		RestoreConsoleAttributes();
-	}
-}
-
 void Fatal(const char* format, ...)
 {
 	errors++;
@@ -143,13 +102,6 @@ void Fatal(const char* format, ...)
 		VPRINTF_ARGS(format);
 		printf("\n");
 		RestoreConsoleAttributes();
-	}
-}
-
-void PrintN(const char* format, ...)
-{
-	if (!quiet) {
-		VPRINTF_ARGS(format);
 	}
 }
 
