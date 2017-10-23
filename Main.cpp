@@ -127,22 +127,26 @@ int main(int argc, char **argv)
 				output_file = fopen(output_file_name.c_str(), "w+");
 				if (!output_file) { Error("Could not create output file <%s>", output_file_name.c_str()); return -1; }
 			}
-			Print("Compiling <%s>", input_file_name_full.c_str());
+			Print("Processing <%s>", input_file_name.c_str());
 		}
-		Trace("Parsing input");
+		Trace("=====================");
+		Trace("Step 1: Parsing ...");
 	}
 
 
 	// Parse
-	int yyparse_ret = yyparse(input_file_name_full.c_str());
-	Trace("Parsing completed");
+	int yyparse_ret = yyparse(input_file_name_full);
 
 	if (!yyparse_ret)
 	{
 		// Evaluate
+		Trace("=====================");
+		Trace("Step 2: Analyzing ...");
 		Program->Evaluate();
 
 		// Compile
+		Trace("=====================");
+		Trace("Step 3: Emitting ...");
 		WriteProgStart();
 		Program->Compile();
 
@@ -161,11 +165,12 @@ int main(int argc, char **argv)
 		remove(tmp_file);
 	}
 	for(auto it = buffers.begin(); it != buffers.end(); ++it) delete[] *it;
-
+	
+	Trace("=====================");
 	if (errors)
 	{
 		SetConsoleAttributes(Console::RED);
-		Print("There were errors");
+		Print("There were %d errors!", errors);
 	}
 	else
 	{
@@ -178,7 +183,7 @@ int main(int argc, char **argv)
 	return yyparse_ret;
 }
 
-void yyerror(const char *file_name, char const *error) {
+void yyerror(string file_name, char const *error) {
 	errors++;
-	Error("%s in file <%s> in line %d", error, yylloc.file_name.c_str(), yylineno);
+	Error("%4d %s: %s", yylineno, yylloc.file_name.c_str(), error);
 }

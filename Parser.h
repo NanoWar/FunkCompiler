@@ -18,7 +18,7 @@ typedef struct YYLTYPE
 #endif
 
 extern "C" int yylex();
-extern "C" int yyparse(const char *file_name);
+extern "C" int yyparse(string file_name);
 extern FILE *yyin;
 extern int yylineno;
 extern YYLTYPE yylloc;

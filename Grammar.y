@@ -1,13 +1,13 @@
 %{
-extern "C" int yylex();
-extern "C" int yyparse(const char *file_name);
-extern char *yytext;
-
-void yyerror(const char *file_name, const char *error);
-
 #include "Global.h"
 #include "AST.h"
 #include "Register.h"
+
+extern "C" int yylex();
+extern "C" int yyparse(string file_name);
+extern char *yytext;
+
+void yyerror(string file_name, const char *error);
 
 #define YYERROR_VERBOSE
 
@@ -15,7 +15,7 @@ extern StatementsNode *Program;
 
 %}
 
-%parse-param { const char *file_name };
+%parse-param { string file_name };
 %initial-action
 {
   @$.file_name = file_name;
@@ -114,7 +114,7 @@ stmt
 : asm
 | mod
 | fn_decl
-| fn_call			{ $$ = new FunctionCallStmt($<fn_call>1); $$->SourceLine = @$.first_line; }
+| fn_call			{ $$ = new FunctionCallStmt(@$, $<fn_call>1); }
 | assign
 | if
 | save
@@ -126,11 +126,11 @@ asm
 ;
 
 mod
-: MOD name '{' stmts '}'	{ $$ = new ModuleNode($<str>2, $<stmts>4); delete $2; }
+: MOD name '{' stmts '}'	{ $$ = new ModuleNode(@$, $<str>2, $<stmts>4); delete $2; }
 ;
 
 fn_decl
-: FN name '(' fn_decl_params ')' fn_decl_results_maybe '{' stmts '}' { $$ = new FunctionDeclNode($<str>2, $<fn_decl_params>4, $<stmts>8, $<fn_decl_results>6); delete $2; }
+: FN name '(' fn_decl_params ')' fn_decl_results_maybe '{' stmts '}' { $$ = new FunctionDeclNode(@$, $<str>2, $<fn_decl_params>4, $<stmts>8, $<fn_decl_results>6); delete $2; }
 ;
 fn_decl_params
 : /* empty */				        { $$ = new ParametersNode(); }
@@ -138,7 +138,7 @@ fn_decl_params
 | fn_decl_params ',' fn_decl_param	{ $$ = $<fn_decl_params>1->Extend($<fn_decl_param>3); }
 ;
 fn_decl_param
-: name ':' reg						{ $$ = new ParameterNode($<str>1, $<reg>3); delete $1; }
+: name ':' reg						{ $$ = new ParameterNode(@$, $<str>1, $<reg>3); delete $1; }
 ;
 fn_decl_results_maybe
 : /* empty */							{ $$ = new ResultsNode(); }
@@ -149,18 +149,18 @@ fn_decl_results
 | fn_decl_results ',' fn_decl_result	{ $$ = $<fn_decl_results>1->Extend($<fn_decl_result>3); }
 ;
 fn_decl_result
-: name ':' reg							{ $$ = new ResultNode($<str>1, $<reg>3); delete $1; }
-| reg									{ $$ = new ResultNode($<reg>1); }
+: name ':' reg							{ $$ = new ResultNode(@$, $<str>1, $<reg>3); delete $1; }
+| reg									{ $$ = new ResultNode(@$, $<reg>1); }
 ;
 
 fn_call
-: ident '(' exprs ')'		{ $$ = new FunctionCallExpr($<ident>1, $<exprs>3); }
+: ident '(' exprs ')'		{ $$ = new FunctionCallExpr(@$, $<ident>1, $<exprs>3); }
 ;
 
 assign
-: reg '=' expr				{ $$ = new AssignStmt($<reg>1, $<expr>3); $$->SourceLine = @$.first_line; }
-| ident '=' expr			{ $$ = new AssignStmt($<ident>1, $<expr>3); $$->SourceLine = @$.first_line; }
-| ident_reg '=' expr		{ $$ = new AssignStmt($<ident_reg>1, $<expr>3); $$->SourceLine = @$.first_line; }
+: reg '=' expr				{ $$ = new AssignStmt(@$, $<reg>1, $<expr>3); }
+| ident '=' expr			{ $$ = new AssignStmt(@$, $<ident>1, $<expr>3); }
+| ident_reg '=' expr		{ $$ = new AssignStmt(@$, $<ident_reg>1, $<expr>3); }
 ;
 
 if
@@ -184,7 +184,7 @@ save_list
 ;
 
 returns
-: RETURN exprs					{ $$ = new ReturnNode($<exprs>2); }
+: RETURN exprs					{ $$ = new ReturnNode(@$, $<exprs>2); }
 ;
 
 
@@ -202,10 +202,10 @@ expr
 | fn_call					{ $$ = $<fn_call>1; }
 | tINTEGER					{ $$ = new NumberExpr(string(yytext)); }
 | tCHARS					{ $$ = new CharsExpr(string(yytext)); }
-| tSTRING					{ $$ = new StringExpr(string(yytext)); }
+| tSTRING					{ $$ = new StringExpr(@$, string(yytext)); }
 | reg						{ $$ = new RegisterExpr($<reg>1); }
 | expr '+' expr				{ $$ = new PlusExpr($<expr>1, $<expr>3); }
-| expr EQEQ expr			{ $$ = new CompareExpr($<expr>1, $<expr>3); }
+| expr EQEQ expr			{ $$ = new CompareExpr(@$, $<expr>1, $<expr>3);}
 | '*' expr					{ $$ = new IndirectionExpr($<expr>2); }
 /*
 | expr '-' expr				{ $$ = mk_node("Minus", 2, $1, $3); }
@@ -229,12 +229,12 @@ name
 ;
 
 ident
-: name					{ $$ = new IdentExpr(*$<str>1); delete $1; $$->SourceLine = @$.first_line; }
+: name					{ $$ = new IdentExpr(@$, *$<str>1); delete $1; }
 | ident '.' name		{ $<ident>1->Extend($<str>3); }
 ;
 
 ident_reg
-: name ':' reg			{ $$ = new IdentRegExpr(*$<str>1, $<reg>3); delete $1; }
+: name ':' reg			{ $$ = new IdentRegExpr(@$, *$<str>1, $<reg>3); delete $1; }
 ;
 
 reg

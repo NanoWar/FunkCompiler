@@ -1,6 +1,8 @@
 #ifndef Console_h
 #define Console_h
 
+#include "Node.h"
+
 #ifdef WIN32
 #include <Windows.h>
 #include <Wincon.h>
@@ -29,10 +31,12 @@ namespace Console
 #endif WIN32
 
 void Trace(const char* format, ...);
+void Trace(const Node* node, const char* format, ...);
 void Info(const char* format, ...);
 void Warn(const char* format, ...);
-void Warn(const int line, const char* format, ...);
+void Warn(const Node* node, const char* format, ...);
 void Error(const char* format, ...);
+void Error(const Node* node, const char* format, ...);
 void Fatal(const char* format, ...);
 void Print(const char* format, ...);
 

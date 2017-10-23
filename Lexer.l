@@ -73,7 +73,7 @@ inc						{ BEGIN(include); }
 		} else {
 			yyin = includeFile;
 			yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
-			yypush_location_state(file_name);
+			yypush_location_state(file_name.c_str());
 		}
 	}
 	BEGIN(INITIAL);

@@ -50,21 +50,21 @@ void Trace(const char* format, ...) {
 	}
 }
 
-void Info(const char* format, ...)
+void Trace(const Node* node, const char* format, ...)
 {
-	if (!quiet) {
-		SetConsoleAttributes(Console::WHITE);
+	if (!quiet && verbose) {
+		SetConsoleAttributes(Console::DARKGRAY);
+		printf("%4d %s: ", node->SourceLoc.first_line, node->SourceLoc.file_name.c_str());
 		VPRINTF_ARGS(format);
 		printf("\n");
 		RestoreConsoleAttributes();
 	}
 }
 
-void Warn(const int line, const char* format, ...)
+void Info(const char* format, ...)
 {
 	if (!quiet) {
-		SetConsoleAttributes(Console::YELLOW);
-		printf("Warning in line %d: ", line);
+		SetConsoleAttributes(Console::WHITE);
 		VPRINTF_ARGS(format);
 		printf("\n");
 		RestoreConsoleAttributes();
@@ -81,10 +81,35 @@ void Warn(const char* format, ...) {
 	}
 }
 
+void Warn(const Node* node, const char* format, ...)
+{
+	if (!quiet) {
+		printf("%4d %s: ", node->SourceLoc.first_line, node->SourceLoc.file_name.c_str());
+		SetConsoleAttributes(Console::YELLOW);
+		printf("Warning: ");
+		VPRINTF_ARGS(format);
+		printf("\n");
+		RestoreConsoleAttributes();
+	}
+}
+
 void Error(const char* format, ...) 
 {
 	errors++;
 	if (!quiet) {
+		SetConsoleAttributes(Console::RED);
+		printf("Error: ");
+		VPRINTF_ARGS(format);
+		printf("\n");
+		RestoreConsoleAttributes();
+	}
+}
+
+void Error(const Node* node, const char* format, ...) 
+{
+	errors++;
+	if (!quiet) {
+		printf("%4d %s: ", node->SourceLoc.first_line, node->SourceLoc.file_name.c_str());
 		SetConsoleAttributes(Console::RED);
 		printf("Error: ");
 		VPRINTF_ARGS(format);

@@ -2,6 +2,7 @@
 #define AST_h
 
 #include "Global.h"
+#include "Node.h"
 #include "Register.h"
 #include "Parser.h"
 #include "Console.h"
@@ -9,33 +10,8 @@
 #include "StringBuffer.h"
 #include <typeinfo>
 
-class Node;
-class FunctionDeclNode;
-
 extern map<Node*, string> NodeToString;
 extern map<string, Node*> StringToNode;
-
-class Node
-{
-public:
-	string Name;
-	int SourceLine;
-	Node *Parent;
-
-	Node()
-	{
-		Name = "";
-		Parent = NULL;
-		SourceLine = -1;
-	}
-
-	string GetIdentifier();
-	virtual void Evaluate() { }
-	virtual void Compile() { }
-
-	FunctionDeclNode *GetFunctionScope();
-	RegisterUsage *GetRegisterUsage();
-};
 
 template<typename OwnType, typename ItemType, typename BaseType = Node>
 class VectorNode : public BaseType
@@ -122,6 +98,8 @@ public:
 class StatementNode : public Node
 {
 public:
+	StatementNode() : Node() {} // TODO: Remove to guarantee location
+	StatementNode(YYLTYPE loc) : Node(loc) {}
 };
 
 class AsmNode : public StatementNode
@@ -159,6 +137,11 @@ public:
 		Size = 1;
 	}
 
+	ExpressionNode(YYLTYPE loc) : Node(loc)
+	{
+		ExpressionNode();
+	}
+
 	bool IsValid()
 	{
 		if (TargetRegister < REGISTER_BIG && Size == 1) return true;
@@ -189,7 +172,9 @@ class ExpressionStmt : public StatementNode
 public:
 	ExpressionNode *Expr;
 
-	ExpressionStmt(ExpressionNode *expr) : Expr(expr)
+	ExpressionStmt(YYLTYPE loc, ExpressionNode *expr)
+		: Expr(expr),
+		StatementNode(loc)
 	{
 		Expr->Parent = this;
 	}
@@ -205,11 +190,14 @@ public:
 class IdentExpr : public VectorNode < IdentExpr, string, ExpressionNode >
 {
 public:
-	IdentExpr(string ident)
+	IdentExpr(YYLTYPE loc, string ident)
 	{
 		Name = ident;
+		SourceLoc = loc;
+		SourceLoc.file_name = yylloc.file_name;
 		Size = 2; // TODO: check if 2 is good default
 	}
+
 	Node *GetReferenced();
 	string GetName();
 	void Compile();
@@ -218,8 +206,8 @@ public:
 class IdentRegExpr : public IdentExpr
 {
 public:
-	IdentRegExpr(string name, ERegister reg)
-		: IdentExpr(name)
+	IdentRegExpr(YYLTYPE loc, string name, ERegister reg)
+		: IdentExpr(loc, name)
 	{
 		HasTargetRegister = true;
 		TargetRegister = reg;
@@ -263,7 +251,7 @@ public:
 class StringExpr : public IdentExpr
 {
 public:
-	StringExpr(string str) : IdentExpr(AddString(str))
+	StringExpr(YYLTYPE loc, string str) : IdentExpr(loc, AddString(str))
 	{
 		Size = 2;
 	}
@@ -294,14 +282,27 @@ public:
 	void Compile();
 };
 
-class CompareExpr : public ExpressionNode
+class SetupNode
+{
+public:
+	vector<Node *> Setups;
+
+	void Compile_Setup()
+	{
+		for (auto setup = Setups.begin(); setup != Setups.end(); ++setup) {
+			(*setup)->Compile();
+		}
+	}
+};
+
+class CompareExpr : public ExpressionNode, public SetupNode
 {
 public:
 	ExpressionNode *Lhs;
 	ExpressionNode *Rhs;
 
-	CompareExpr(ExpressionNode *lhs, ExpressionNode *rhs)
-		: Lhs(lhs), Rhs(rhs)
+	CompareExpr(YYLTYPE loc, ExpressionNode *lhs, ExpressionNode *rhs)
+		: ExpressionNode(loc), Lhs(lhs), Rhs(rhs)
 	{
 		Size = 0;
 		Lhs->Parent = this;
@@ -315,6 +316,7 @@ public:
 	}
 
 	void Compile();
+	void Evaluate();
 };
 
 class IndirectionExpr : public ExpressionNode
@@ -357,16 +359,27 @@ public:
 	ExpressionNode *Lhs;
 	ExpressionNode *Rhs;
 
-	AssignStmt(ERegister reg, ExpressionNode *rhs)
-		: Rhs(rhs)
+	AssignStmt(YYLTYPE loc, ERegister reg, ExpressionNode *rhs)
+		: Rhs(rhs),
+		StatementNode(loc)
 	{
 		Lhs = new RegisterExpr(reg);
 		Lhs->Parent = this;
 		Rhs->Parent = this;
 	}
 
-	AssignStmt(IdentExpr *ident, ExpressionNode *rhs)
-		: Lhs(ident), Rhs(rhs)
+	AssignStmt(YYLTYPE loc, ERegister lreg, ERegister rreg)
+		: StatementNode(loc)
+	{
+		Lhs = new RegisterExpr(lreg);
+		Lhs->Parent = this;
+		Rhs = new RegisterExpr(rreg);
+		Rhs->Parent = this;
+	}
+
+	AssignStmt(YYLTYPE loc, IdentExpr *ident, ExpressionNode *rhs)
+		: Lhs(ident), Rhs(rhs),
+		StatementNode(loc)
 	{
 		Lhs->Parent = this;
 		Rhs->Parent = this;
@@ -388,13 +401,12 @@ class ModuleNode : public StatementNode
 public:
 	StatementsNode *Statements;
 
-	ModuleNode(string *name, StatementsNode *statements)
+	ModuleNode(YYLTYPE loc, string *name, StatementsNode *statements)
 		: Statements(statements),
-		StatementNode()
+		StatementNode(loc)
 	{
 		Name = *name;
 		statements->Parent = this;
-		Trace("Creating module <%s> in line %d", Name.c_str(), SourceLine);
 	}
 
 	~ModuleNode()
@@ -411,8 +423,9 @@ class ParameterNode : public Node
 public:
 	ERegister Register;
 
-	ParameterNode(string *name, ERegister reg)
-		: Register(reg)
+	ParameterNode(YYLTYPE loc, string *name, ERegister reg)
+		: Register(reg),
+		Node(loc)
 	{
 		Name = *name;
 	}
@@ -431,13 +444,15 @@ class ResultNode : public Node
 public:
 	ERegister Register;
 
-	ResultNode(ERegister reg)
-		: Register(reg)
+	ResultNode(YYLTYPE loc, ERegister reg)
+		: Register(reg),
+		Node(loc)
 	{
 	}
 
-	ResultNode(string *name, ERegister reg)
-		: Register(reg)
+	ResultNode(YYLTYPE loc, string *name, ERegister reg)
+		: Register(reg),
+		Node(loc)
 	{
 		Name = *name;
 	}
@@ -467,9 +482,9 @@ public:
 	IdentExpr *Ident;
 	ExpressionsNode *Parameters;
 
-	FunctionCallExpr(IdentExpr *ident, ExpressionsNode *parameters)
+	FunctionCallExpr(YYLTYPE loc, IdentExpr *ident, ExpressionsNode *parameters)
 		: Ident(ident), Parameters(parameters),
-		ExpressionNode()
+		ExpressionNode(loc)
 	{
 		Ident->Parent = this;
 		Parameters->Parent = this;
@@ -488,8 +503,8 @@ public:
 class FunctionCallStmt : public ExpressionStmt
 {
 public:
-	FunctionCallStmt(FunctionCallExpr *functionCall)
-		: ExpressionStmt(functionCall)
+	FunctionCallStmt(YYLTYPE loc, FunctionCallExpr *functionCall)
+		: ExpressionStmt(loc, functionCall)
 	{
 	}
 };
@@ -509,9 +524,9 @@ public:
 	StatementsNode *Statements;
 	ResultsNode *Results;
 
-	FunctionDeclNode(string *name, ParametersNode *parameters, StatementsNode *statements, ResultsNode *results)
+	FunctionDeclNode(YYLTYPE loc, string *name, ParametersNode *parameters, StatementsNode *statements, ResultsNode *results)
 		: Parameters(parameters), Statements(statements), Results(results),
-		StatementNode()
+		StatementNode(loc)
 	{
 		Name = *name;
 		parameters->Parent = this;
@@ -603,8 +618,8 @@ class ReturnNode : public StatementNode
 public:
 	ExpressionsNode *Exprs;
 
-	ReturnNode(ExpressionsNode *exprs)
-		: Exprs(exprs), StatementNode()
+	ReturnNode(YYLTYPE loc, ExpressionsNode *exprs) : StatementNode(loc),
+		Exprs(exprs)
 	{
 		Exprs->Parent = this;
 	}

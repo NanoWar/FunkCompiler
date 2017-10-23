@@ -12,11 +12,11 @@ bool RegisterId(Node *node)
 {
 	auto id = node->GetIdentifier();
 	if (StringToNode[id]) {
-		Trace("Id <%s> is already registered", id.c_str());
+		Trace(node, "Id <%s> is already registered", id.c_str());
 		return false;
 	}
 	else {
-		Trace("Registering id <%s>", id.c_str());
+		Trace(node, "Registering id <%s>", id.c_str());
 		StringToNode[id] = node;
 		return true;
 	}
@@ -35,12 +35,53 @@ void AssignStmt::Evaluate()
 	}
 	else
 	{
-		GetRegisterUsage()->SetUsage(Lhs->TargetRegister, ERegisterUsage::USED, SourceLine);
+		GetRegisterUsage()->SetUsage(this, Lhs->TargetRegister, ERegisterUsage::USED);
+	}
+}
+
+void CompareExpr::Evaluate()
+{
+	Lhs->Evaluate();
+	Rhs->Evaluate();
+
+	if (Lhs->HasStaticValue && Rhs->HasStaticValue)
+	{
+		if (Lhs->Value == Rhs->Value)
+		{
+			Warn(this, "Comparison is always true");
+			Value = 1;
+		}
+		else
+		{
+			Warn(this, "Comparison is always false");
+			Value = 0;
+		}
+		HasStaticValue = true;
+		return;
+	}
+	
+	if(Lhs->HasTargetRegister)
+	{
+		AssignStmt *assign;
+		if(IS_BIG(Lhs->TargetRegister))
+		{
+			assign = new AssignStmt(SourceLoc, ERegister::HL, Lhs->TargetRegister);
+			Lhs->TargetRegister = ERegister::HL;
+		}
+		else
+		{
+			assign = new AssignStmt(SourceLoc, ERegister::A, Lhs->TargetRegister);
+			Lhs->TargetRegister = ERegister::A;
+		}
+		Setups.push_back(assign);
+		assign->Parent = this;
+		assign->Evaluate();
 	}
 }
 
 void IfStmt::Evaluate()
 {
+	Expr->Evaluate();
 	TrueStmts->Evaluate();
 	FalseStmts->Evaluate();
 }

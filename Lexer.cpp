@@ -25,7 +25,7 @@ void after_rule()
 stack<YYLTYPE> location_stack = stack<YYLTYPE>();
 stack<int> line_stack = stack<int>();
 
-void yypush_location_state(string new_file_name)
+void yypush_location_state(const char *new_file_name)
 {
 	line_stack.push(yylineno);
 	yylineno = 1;

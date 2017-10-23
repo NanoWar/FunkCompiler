@@ -4,7 +4,7 @@
 void before_rule();
 void after_rule();
 
-void yypush_location_state(string new_file_name);
+void yypush_location_state(const char *new_file_name);
 void yypop_location_state();
 
 #endif Lexer_h

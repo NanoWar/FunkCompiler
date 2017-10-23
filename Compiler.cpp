@@ -20,14 +20,14 @@ void ReturnNode::Compile()
 	auto results = GetFunctionScope()->Results;
 	if(results->Children.size() != Exprs->Children.size())
 	{
-		Error("Return does not match function results");
+		Error(this, "Return does not match function results");
 		return;
 	}
 	for(int i = 0; i < results->Children.size(); i++)
 	{
 		auto reg = results->Children[i]->Register;
 		auto expr = Exprs->Children[i];
-		auto assign = new AssignStmt(reg, expr);
+		auto assign = new AssignStmt(SourceLoc, reg, expr);
 		assign->Parent = this;
 		assign->Compile();
 	}
@@ -36,7 +36,7 @@ void ReturnNode::Compile()
 
 void FunctionDeclNode::Compile()
 {
-	Trace("Line %d: Compiling function <%s>", SourceLine, GetIdentifier().c_str());
+	Trace(this, "Compiling function <%s>", GetIdentifier().c_str());
 	//WriteLn("\n;------------------------------\n; Function: %s\n;------------------------------", Name.c_str());
 	WriteLn("\n%s", GetIdentifier().c_str());
 	if (Parameters->HasChildren())
@@ -103,36 +103,10 @@ void IfStmt::Compile()
 
 void CompareExpr::Compile()
 {
-	if (Lhs->HasStaticValue && Rhs->HasStaticValue)
+	Compile_Setup();
+	if (!HasStaticValue && Lhs->HasTargetRegister)
 	{
-		if (Lhs->Value == Rhs->Value)
-		{
-			Warn("Comparison is always true");
-			HasStaticValue = true;
-			Value = 1;
-		}
-		else
-		{
-			Warn("Comparison is always false");
-			HasStaticValue = true;
-			Value = 0;
-		}
-	}
-	else
-	{
-		Lhs->Compile();
-		if (Lhs->HasTargetRegister && Lhs->TargetRegister == ERegister::HL) {
-			WriteLn("\tpush\thl");
-		}
-		Rhs->Compile();
-		// TODO
-
-		if (Lhs->HasTargetRegister)
-		{
-			// Assign LHS to a
-			WriteLoad(ERegister::A, Lhs->TargetRegister);
-			WriteLn("\tcp\t%s", Rhs->Target.c_str());
-		}
+		WriteLn("\tcp\t%s", Rhs->Target.c_str());
 	}
 }
 
@@ -163,7 +137,7 @@ void IndirectionExpr::Compile()
 
 void ModuleNode::Compile()
 {
-	Trace("Line %d: Compiling module <%s>", SourceLine, GetIdentifier().c_str());
+	Trace(this, "Compiling module <%s>", GetIdentifier().c_str());
 	WriteLn("\n;==============================\n; Module: %s\n;==============================", GetIdentifier().c_str());
 	Statements->Compile();
 }
@@ -252,14 +226,14 @@ void FunctionCallExpr::Compile()
 	auto decl_params = decl->Parameters;
 	if (decl_params->Children.size() != Parameters->Children.size())
 	{
-		Warn(SourceLine, "Parameter mismatch of function <%s>", decl->GetIdentifier().c_str());
+		Warn(this, "Parameter mismatch of function <%s>", decl->GetIdentifier().c_str());
 	}
 	else
 	{
 		// Parameters are compiled here (inside assign)
 		for (unsigned int i = 0; i < Parameters->Children.size(); i++)
 		{
-			auto assign = new AssignStmt(decl_params->Children[i]->Register, Parameters->Children[i]);
+			auto assign = new AssignStmt(SourceLoc, decl_params->Children[i]->Register, Parameters->Children[i]);
 			assign->Parent = this;
 			assign->Compile();
 		}
@@ -283,7 +257,7 @@ void IdentExpr::Compile()
 	auto direct = Definitions[name];
 	if (!direct.empty())
 	{
-		Trace("Found direct replacement <%s> => <%s>", name.c_str(), direct.c_str());
+		Trace(this, "Found direct replacement <%s> => <%s>", name.c_str(), direct.c_str());
 		Name = ""; // Name gets replaced
 		Target = direct;
 		return;
@@ -294,7 +268,7 @@ void IdentExpr::Compile()
 	auto replacement = Definitions[identifier];
 	if (!replacement.empty())
 	{
-		Trace("Found replacement <%s> => <%s>", identifier.c_str(), replacement.c_str());
+		Trace(this, "Found replacement <%s> => <%s>", identifier.c_str(), replacement.c_str());
 		Name = ""; // Name gets replaced
 		Target = replacement;
 		return;
@@ -305,14 +279,14 @@ void IdentExpr::Compile()
 	{
 		if (auto def = DefinitionsHashed[name.c_str()])
 		{
-			Trace("Found definition <%s> => <%s>", name.c_str(), def);
+			Trace(this, "Found definition <%s> => <%s>", name.c_str(), def);
 			int num = ParseNumber(def);
 			if (num == -1) Size = 0;
 			else Size = num > 255 ? 2 : 1;
 		}
 		else
 		{
-			Warn(SourceLine, "Cannot resolve id <%s>", name.c_str());
+			Error(this, "Cannot resolve id <%s>", name.c_str());
 		}
 		Target = name;
 	}
@@ -348,7 +322,7 @@ void AssignStmt::Compile()
 		{
 			if (Lhs->Size != Rhs->Size)
 			{
-				Warn(SourceLine, "Incompatible operation <ld %s, %s>", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
+				Error(this, "Incompatible operation <ld %s, %s>", RSMx(Lhs->TargetRegister), RSMx(Rhs->TargetRegister));
 			}
 			WriteLoad(Lhs->TargetRegister, Rhs->TargetRegister);
 		}
@@ -368,7 +342,7 @@ void AssignStmt::Compile()
 			if (Rhs->Name.empty())
 			{
 				// TODO: check for "ld de, (hl)"
-				Trace("Interesting expression <%s> of size <%d>", Rhs->Target.c_str(), Rhs->Size);
+				Trace(this, "Found interesting expression <%s> of size <%d>", Rhs->Target.c_str(), Rhs->Size);
 				// Combined expression like indirection or replacement from definitions file
 				WriteLoad(Lhs->TargetRegister, Rhs->Target);
 			}
@@ -387,7 +361,7 @@ void AssignStmt::Compile()
 			}
 			else
 			{
-				Fatal("Cannot resolve <%s>", Rhs->Name);
+				Error(this, "Cannot resolve <%s>", Rhs->Name);
 			}
 		}
 	}
@@ -412,7 +386,7 @@ void SaveStmt::Compile()
 			}
 			else
 			{
-				Error("Cannot save <%s> because it has no attached register", (*ident)->GetName().c_str());
+				Error(this, "Cannot save <%s> because it has no attached register", (*ident)->GetName().c_str());
 			}
 		}
 		else if (auto parameter = dynamic_cast<ParameterNode *>(ref))
@@ -432,7 +406,7 @@ void SaveStmt::Compile()
 		}
 		else
 		{
-			Warn("Cannot resolve reference <%s>", (*ident)->GetName().c_str());
+			Error(this, "Cannot resolve reference <%s>", (*ident)->GetName().c_str());
 		}
 	}
 	for (auto reg = SaveList->Registers.begin(); reg != SaveList->Registers.end(); ++reg)
