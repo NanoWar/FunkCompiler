@@ -10,13 +10,13 @@ enum ERegister
 	A, F, B, C, D, E, H, L, IXH, IXL, IYH, IYL, I, R,
 	AF, BC, DE, HL, IX, IY, IR,
 	MAX,
-	AFS
+	AFS // AF shadow register
 };
 
 enum ERegisterUsage
 {
 	FREE,
-	FIXED_,
+	FIX, // constant value (also used)
 	USED
 };
 
@@ -38,22 +38,27 @@ struct RegisterUsageInfo
 {
 	ERegisterUsage Usage;
 	int Value;
+	bool IsMutable;
 
-	RegisterUsageInfo() : Usage(ERegisterUsage::FREE), Value(0) { }
+	RegisterUsageInfo() : Usage(ERegisterUsage::FREE), Value(0), IsMutable(true) { }
 
 	RegisterUsageInfo Combine(RegisterUsageInfo other, bool otherIsLow = true);
 };
 
-class RegisterUsage
+class RegisterPool
 {
 private:
 	map<ERegister, RegisterUsageInfo> RegisterUsageInfoMap;
 
 public:
-	ERegister AnyFIXED_Value(int value, bool isSmall);
+	ERegister AnyFixValue(int value, bool isSmall);
 	RegisterUsageInfo GetUsageInfo(ERegister reg);
-	void SetUsageInfo(ERegister reg, RegisterUsageInfo info);
+	
+	// Set value only if usage is FIX
 	void SetUsage(const Node* node, ERegister reg, ERegisterUsage usage, int value = 0);
+	void SetUsageInfo(const Node* node, ERegister reg, RegisterUsageInfo info);
+
+	void SetMutability(const Node* node, ERegister reg, bool isMutable);
 };
 
 #endif Register_h

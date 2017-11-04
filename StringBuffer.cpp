@@ -12,6 +12,7 @@ void Check()
 {
 	if (PagedStrings.size() <= CurrentPage) {
 		PagedStrings.push_back(CurrentStrings);
+		// TODO
 	}
 }
 
@@ -19,6 +20,8 @@ string AddString(string str)
 {
 	auto ident = CurrentStrings[str];
 	if (!ident.empty()) return ident;
+
+	// Add to list
 	stringstream ss;
 	ss << "_str_" << ++StringCount;
 	CurrentStrings[str] = ss.str();

@@ -19,7 +19,7 @@ FunctionDeclNode *Node::GetFunctionScope()
 	return NULL;
 }
 
-RegisterUsage *Node::GetRegisterUsage()
+RegisterPool *Node::GetRegisterPool()
 {
-	return &(GetFunctionScope()->RegisterUsage);
+	return GetFunctionScope()->RegisterPool;
 }

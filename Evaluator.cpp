@@ -7,35 +7,58 @@
 #include "StringHelper.h"
 #include "StringBuffer.h"
 #include "Writer.h"
+#include "Definitions.h"
 
-bool RegisterId(Node *node)
+bool Register(string str, Node *node)
 {
-	auto id = node->GetIdentifier();
-	if (StringToNode[id]) {
-		Trace(node, "Id <%s> is already registered", id.c_str());
+	if (StringToNode[str]) {
+		Trace(node, "Id <%s> is already registered", str.c_str());
 		return false;
 	}
 	else {
-		Trace(node, "Registering id <%s>", id.c_str());
-		StringToNode[id] = node;
+		Trace(node, "Registering id <%s>", str.c_str());
+		StringToNode[str] = node;
 		return true;
 	}
 }
 
+bool RegisterId(Node *node)
+{
+	auto id = node->GetIdentifier();
+	return Register(id, node);
+}
+
+void IdentRegExpr::Evaluate()
+{
+	RegisterId(this);
+}
+
+void IdentExpr::Evaluate()
+{
+}
+
 void AssignStmt::Evaluate()
 {
-	if(dynamic_cast<IdentRegExpr *>(Lhs))
-	{
-		RegisterId(Lhs);
-	}
+	Lhs->Evaluate();
+	Rhs->Evaluate();
 
 	if (!Lhs->HasTargetRegister)
 	{
+		// Its just a naming
 		RegisterId(Lhs);
 	}
 	else
 	{
-		GetRegisterUsage()->SetUsage(this, Lhs->TargetRegister, ERegisterUsage::USED);
+		// Check if register is mutable
+		auto reg = Lhs->TargetRegister;
+		auto pool = GetRegisterPool();
+		if (pool->GetUsageInfo(reg).IsMutable == false)
+		{
+			Error(this, "Register <%s> is immutable", RSMx(reg));
+			return;
+		}
+		
+		pool->SetUsage(this, reg, ERegisterUsage::USED);
 	}
 }
 
@@ -88,6 +111,13 @@ void IfStmt::Evaluate()
 
 void ParameterNode::Evaluate()
 {
+	if (IsMutable == false)
+	{
+		// Set immutable registers as used
+		auto pool = GetRegisterPool();
+		pool->SetMutability(this, Register, IsMutable);
+		pool->SetUsage(this, Register, ERegisterUsage::USED);
+	}
 	RegisterId(this);
 }
 

@@ -31,24 +31,30 @@ map<ERegister, string> RegisterStringMap = mk_reg_map();
 RegisterUsageInfo RegisterUsageInfo::Combine(RegisterUsageInfo other, bool otherIsLow)
 {
 	RegisterUsageInfo result;
+
+	// Calculate usage
 	if (Usage == ERegisterUsage::FREE && other.Usage == ERegisterUsage::FREE)
 	{
 		result.Usage = ERegisterUsage::FREE;
 	}
-	else if (Usage == ERegisterUsage::FIXED_ && other.Usage == ERegisterUsage::FIXED_)
+	else if (Usage == ERegisterUsage::FIX && other.Usage == ERegisterUsage::FIX)
 	{
-		result.Usage = ERegisterUsage::FIXED_;
+		result.Usage = ERegisterUsage::FIX;
 		result.Value = otherIsLow ? other.Value + Value * 256 : Value + other.Value * 256;
 	}
 	else
 	{
 		result.Usage = ERegisterUsage::USED;
 	}
+
+	// Calculate mutability
+	result.IsMutable = IsMutable && other.IsMutable;
+
 	return result;
 }
 
 
-ERegister RegisterUsage::AnyFIXED_Value(int value, bool isSmall)
+ERegister RegisterPool::AnyFixValue(int value, bool isSmall)
 {
 	ERegister start, end;
 	if (isSmall)
@@ -66,7 +72,7 @@ ERegister RegisterUsage::AnyFIXED_Value(int value, bool isSmall)
 	{
 		auto reg = (ERegister)i;
 		auto info = RegisterUsageInfoMap[reg];
-		if (info.Usage == ERegisterUsage::FIXED_ && info.Value == value)
+		if (info.Usage == ERegisterUsage::FIX && info.Value == value)
 		{
 			return reg;
 		}
@@ -74,7 +80,7 @@ ERegister RegisterUsage::AnyFIXED_Value(int value, bool isSmall)
 	return ERegister::NONE;
 }
 
-RegisterUsageInfo RegisterUsage::GetUsageInfo(ERegister reg)
+RegisterUsageInfo RegisterPool::GetUsageInfo(ERegister reg)
 {
 	if (IS_SMALL(reg))
 	{
@@ -86,8 +92,25 @@ RegisterUsageInfo RegisterUsage::GetUsageInfo(ERegister reg)
 	}
 }
 
-void RegisterUsage::SetUsageInfo(ERegister reg, RegisterUsageInfo info)
+void RegisterPool::SetUsage(const Node* node, ERegister reg, ERegisterUsage usage, int value)
 {
+	auto info = GetUsageInfo(reg);
+	if (usage != ERegisterUsage::FREE && info.Usage != ERegisterUsage::FREE)
+	{
+		Warn(node, "Register <%s> is already in use", RSMx(reg));
+	}
+	info.Usage = usage;
+	info.Value = value;
+	SetUsageInfo(node, reg, info);
+}
+
+void RegisterPool::SetUsageInfo(const Node *node, ERegister reg, RegisterUsageInfo info)
+{
+	if (reg == ERegister::NONE)
+	{
+		Fatal(node, "Register was not read properly");
+	}
+
 	if (IS_SMALL(reg))
 	{
 		RegisterUsageInfoMap[reg] = info;
@@ -100,19 +123,18 @@ void RegisterUsage::SetUsageInfo(ERegister reg, RegisterUsageInfo info)
 		lo.Usage = info.Usage;
 		hi.Value = info.Value / 256;
 		lo.Value = info.Value % 256;
+		hi.IsMutable = info.IsMutable;
+		lo.IsMutable = info.IsMutable;
 		RegisterUsageInfoMap[HI_REG(reg)] = hi;
 		RegisterUsageInfoMap[LO_REG(reg)] = lo;
 	}
 }
 
-void RegisterUsage::SetUsage(const Node* node, ERegister reg, ERegisterUsage usage, int value)
+void RegisterPool::SetMutability(const Node* node, ERegister reg, bool isMutable)
 {
-	if (GetUsageInfo(reg).Usage != ERegisterUsage::FREE)
-	{
-		Warn(node, "Register <%s> is already in use", RSMx(reg));
-	}
-	RegisterUsageInfo info;
-	info.Usage = usage;
-	info.Value = value;
-	SetUsageInfo(reg, info);
+	auto info = GetUsageInfo(reg);
+
+	info.IsMutable = isMutable;
+
+	SetUsageInfo(node, reg, info);
 }

@@ -38,6 +38,7 @@ void Warn(const Node* node, const char* format, ...);
 void Error(const char* format, ...);
 void Error(const Node* node, const char* format, ...);
 void Fatal(const char* format, ...);
+void Fatal(const Node* node, const char* format, ...);
 void Print(const char* format, ...);
 
 void SaveConsoleAttributes();

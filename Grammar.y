@@ -138,7 +138,8 @@ fn_decl_params
 | fn_decl_params ',' fn_decl_param	{ $$ = $<fn_decl_params>1->Extend($<fn_decl_param>3); }
 ;
 fn_decl_param
-: name ':' reg						{ $$ = new ParameterNode(@$, $<str>1, $<reg>3); delete $1; }
+: name ':' reg '*'					{ $$ = new ParameterNode(@$, $<str>1, $<reg>3, false); delete $1; }
+| name ':' reg						{ $$ = new ParameterNode(@$, $<str>1, $<reg>3, true); delete $1; }
 ;
 fn_decl_results_maybe
 : /* empty */							{ $$ = new ResultsNode(); }
@@ -173,7 +174,7 @@ else
 ;
 
 save
-: SAVE save_list '{' stmts '}'	{ $$ = new SaveStmt($<save_list>2, $<stmts>4); }
+: SAVE save_list '{' stmts '}'	{ $$ = new SaveStmt(@$, $<save_list>2, $<stmts>4); }
 ;
 
 save_list

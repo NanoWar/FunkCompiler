@@ -130,6 +130,19 @@ void Fatal(const char* format, ...)
 	}
 }
 
+void Fatal(const Node *node, const char* format, ...)
+{
+	errors++;
+	if (!quiet) {
+		printf("%4d %s: ", node->SourceLoc.first_line, node->SourceLoc.file_name.c_str());
+		SetConsoleAttributes(Console::MAGENTA);
+		printf("Fatal: ");
+		VPRINTF_ARGS(format);
+		printf("\n");
+		RestoreConsoleAttributes();
+	}
+}
+
 void Print(const char* format, ...)
 {
 	if (!quiet) {

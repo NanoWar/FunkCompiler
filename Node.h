@@ -6,7 +6,7 @@
 
 class Node;
 class FunctionDeclNode;
-class RegisterUsage;
+class RegisterPool;
 
 class Node
 {
@@ -33,7 +33,7 @@ public:
 	virtual void Compile() { }
 
 	FunctionDeclNode *GetFunctionScope();
-	RegisterUsage *GetRegisterUsage();
+	RegisterPool *GetRegisterPool();
 };
 
 #endif

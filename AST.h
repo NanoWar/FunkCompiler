@@ -200,9 +200,12 @@ public:
 
 	Node *GetReferenced();
 	string GetName();
+
+	void Evaluate();
 	void Compile();
 };
 
+// LHS only!
 class IdentRegExpr : public IdentExpr
 {
 public:
@@ -213,6 +216,8 @@ public:
 		TargetRegister = reg;
 		Size = REG_SIZE(reg);
 	}
+
+	void Evaluate();
 };
 
 class NumberExpr : public ExpressionNode
@@ -422,9 +427,10 @@ class ParameterNode : public Node
 {
 public:
 	ERegister Register;
+	bool IsMutable;
 
-	ParameterNode(YYLTYPE loc, string *name, ERegister reg)
-		: Register(reg),
+	ParameterNode(YYLTYPE loc, string *name, ERegister reg, bool isMutable)
+		: Register(reg), IsMutable(isMutable),
 		Node(loc)
 	{
 		Name = *name;
@@ -512,9 +518,19 @@ public:
 class Scope
 {
 public:
-	RegisterUsage RegisterUsage;
-	int Counter;
-	Scope() : Counter(0) { }
+	RegisterPool *RegisterPool;
+	int Counter; // for e.g. label names
+
+	Scope()
+	{
+		Counter = 0;
+		RegisterPool = new ::RegisterPool();
+	}
+
+	~Scope()
+	{
+		delete RegisterPool;
+	}
 };
 
 class FunctionDeclNode : public StatementNode, public Scope
@@ -597,8 +613,9 @@ public:
 	SaveListNode *SaveList;
 	StatementsNode *Statements;
 
-	SaveStmt(SaveListNode *save_list, StatementsNode *stmts)
-		: SaveList(save_list), Statements(stmts)
+	SaveStmt(YYLTYPE loc, SaveListNode *save_list, StatementsNode *stmts)
+		: SaveList(save_list), Statements(stmts),
+		StatementNode(loc)
 	{
 		SaveList->Parent = this;
 		Statements->Parent = this;
