@@ -32,7 +32,7 @@ vector<string> GetNames(IdentExpr *node, bool includeOwn)
 {
 	vector<string> path;
 	path.push_back(node->Name);
-	for (int i = 0; i < node->Children.size() - (includeOwn ? 0 : 1); i++)
+	for (int i = 0; i < (int) node->Children.size() - (includeOwn ? 0 : 1); i++)
 	{
 		path.push_back(*(node->Children.at(i)));
 	}
