@@ -144,8 +144,3 @@ void StructNode::Evaluate()
 	RegisterId(this);
 	Definitions->Evaluate();
 }
-
-void StructDefNode::Evaluate()
-{
-	RegisterId(this);
-}

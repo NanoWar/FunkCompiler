@@ -27,25 +27,28 @@ string Node::GetIdentifier()
 	return result;
 }
 
-string IdentExpr::GetName()
+// Helper
+vector<string> GetNames(IdentExpr *node, bool includeOwn)
 {
 	vector<string> path;
-	path.push_back(Name);
-	for (auto it = Children.begin(); it != Children.end(); ++it) {
-		path.push_back(**it);
+	path.push_back(node->Name);
+	for (int i = 0; i < node->Children.size() - (includeOwn ? 0 : 1); i++)
+	{
+		path.push_back(*(node->Children.at(i)));
 	}
-	string name = join(path, ".");
+	return path;
+}
+
+string IdentExpr::GetName(bool includeOwn)
+{
+	string name = join(GetNames(this, includeOwn), ".");
 	return name;
 }
 
-Node *IdentExpr::GetReferenced()
+Node *IdentExpr::GetReferenced(bool includeOwn)
 {
 	// Build own name and copy
-	vector<string> names;
-	names.push_back(Name);
-	for (auto it = Children.begin(); it != Children.end(); ++it) {
-		names.push_back(**it);
-	}
+	vector<string> names = GetNames(this, includeOwn);
 	string name = join(names, ".");
 	vector<string> path(names.begin(), names.end()); // copy
 
@@ -82,7 +85,7 @@ Node *IdentExpr::GetReferenced()
 		// Next
 		parent = parent->Parent;
 	}
-	
+
 	// Try parallel paths
 	if(node == NULL && path.size() > names.size())
 	{

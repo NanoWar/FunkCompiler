@@ -74,15 +74,21 @@ public:
 	}
 
 	void Evaluate() {
-		for (auto child = Children) child->Evaluate();
+		for (auto child = Children.begin(); child != Children.end(); ++child) {
+			(*child)->Evaluate();
+		}
 	}
 
 	void Compile() {
-		for (auto child = Children) child->Compile();
+		for (auto child = Children.begin(); child != Children.end(); ++child) {
+			(*child)->Compile();
+		}
 	}
 
 	~ContainerNode() {
-		for (auto child : Children) delete child;
+		for (auto child = Children.begin(); child != Children.end(); ++child) {
+			delete *child;
+		}
 	}
 };
 
@@ -191,8 +197,9 @@ public:
 		Size = 2; // TODO: check if 2 is good default
 	}
 
-	Node *GetReferenced();
-	string GetName();
+	Node *GetReferenced(bool includeOwn = true);
+
+	string GetName(bool includeOwn = true);
 
 	void Evaluate();
 	void Compile();
@@ -431,12 +438,22 @@ class ParameterNode : public Node
 public:
 	ERegister Register;
 	bool IsMutable;
+	bool HasType;
+	IdentExpr *Type;
 
 	ParameterNode(YYLTYPE loc, string *name, ERegister reg, bool isMutable)
-		: Register(reg), IsMutable(isMutable),
+		: Register(reg), IsMutable(isMutable), HasType(false),
 		Node(loc)
 	{
 		Name = *name;
+	}
+
+	ParameterNode(YYLTYPE loc, string *name, ERegister reg, bool isMutable, IdentExpr *ident)
+		: Register(reg), IsMutable(isMutable), HasType(true), Type(ident),
+		Node(loc)
+	{
+		Name = *name;
+		ident->Parent = this;
 	}
 
 	void Evaluate();
@@ -659,8 +676,6 @@ public:
 	{
 		Name = name;
 	}
-
-	void Evaluate();
 };
 
 class StructDefsNode : public ContainerNode < StructDefsNode, StructDefNode >

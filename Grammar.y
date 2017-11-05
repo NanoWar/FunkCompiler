@@ -41,9 +41,9 @@ extern StatementsNode *Program;
  ResultsNode *fn_decl_results;
  ResultNode *fn_decl_result;
  SaveListNode *save_list;
- StructNode *data;
- StructDefsNode *data_defs;
- StructDefNode *data_def;
+ StructNode *type;
+ StructDefsNode *type_defs;
+ StructDefNode *type_def;
 }
 
 %debug
@@ -64,9 +64,9 @@ extern StatementsNode *Program;
 %type <fn_decl_results> fn_decl_results_maybe fn_decl_results
 %type <fn_decl_result> fn_decl_result
 %type <save_list> save_list
-%type <data> data
-%type <data_defs> data_defs
-%type <data_def> data_def
+%type <type> type
+%type <type_defs> type_defs
+%type <type_def> type_def
 
 
 %token <token> SHL SHR
@@ -82,7 +82,7 @@ extern StatementsNode *Program;
 
 // Keywords
 %token <token> LET IF ELIF ELSE MATCH LOOP END RETURN SAVE
-%token <token> MOD FN ENUM DAT
+%token <token> MOD FN ENUM TYPE
 %token <token> tTRUE tFALSE
 
 // Types
@@ -124,7 +124,7 @@ stmt
 // Top level
 : mod
 | fn_decl
-| data
+| type
 // Sub level
 | asm
 | fn_call			{ $$ = new FunctionCallStmt(@$, $<fn_call>1); }
@@ -151,8 +151,9 @@ fn_decl_params
 | fn_decl_params ',' fn_decl_param	{ $$ = $<fn_decl_params>1->Extend($<fn_decl_param>3); }
 ;
 fn_decl_param
-: name ':' reg '*'					{ $$ = new ParameterNode(@$, $<str>1, $<reg>3, false); delete $1; }
-| name ':' reg						{ $$ = new ParameterNode(@$, $<str>1, $<reg>3, true); delete $1; }
+: name ':' reg						{ $$ = new ParameterNode(@$, $<str>1, $<reg>3, true); delete $1; }
+| name ':' reg '*'					{ $$ = new ParameterNode(@$, $<str>1, $<reg>3, false); delete $1; }
+| name ':' REG_IX '[' ident ']'		{ $$ = new ParameterNode(@$, $<str>1, ERegister::IX, false, $<ident>5); delete $1; }
 ;
 fn_decl_results_maybe
 : /* empty */							{ $$ = new ResultsNode(); }
@@ -201,15 +202,15 @@ returns
 : RETURN exprs					{ $$ = new ReturnNode(@$, $<exprs>2); }
 ;
 
-data
-: DAT name '{' data_defs '}'	{ $$ = new StructNode(@$, *$<str>2, $<data_defs>4); delete $2; }
+type
+: TYPE name '{' type_defs '}'	{ $$ = new StructNode(@$, *$<str>2, $<type_defs>4); delete $2; }
 ;
-data_defs
+type_defs
 : /* empty */					{ $$ = new StructDefsNode(); }
-| data_def						{ $$ = new StructDefsNode(); $$->Extend($<data_def>1); }
-| data_defs data_def			{ $1->Extend($<data_def>2); }
+| type_def						{ $$ = new StructDefsNode(); $$->Extend($<type_def>1); }
+| type_defs type_def			{ $1->Extend($<type_def>2); }
 ;
-data_def
+type_def
 : name ':' tBYTE				{ $$ = new StructDefNode(@$, *$<str>1, 1); delete $1; }
 | name ':' tWORD				{ $$ = new StructDefNode(@$, *$<str>1, 2); delete $1; }
 ;

@@ -112,7 +112,12 @@ void CompareExpr::Compile()
 
 void ParameterNode::Compile()
 {
-	WriteLn(";  %s = %s", RSMx(Register), Name.c_str());
+	if (HasType) {
+		WriteLn(";  %s = %s [%s]", RSMx(Register), Name.c_str(), Type->GetName().c_str());
+	}
+	else {
+		WriteLn(";  %s = %s", RSMx(Register), Name.c_str());
+	}
 }
 
 void ResultNode::Compile()
@@ -162,7 +167,7 @@ void PlusExpr::Compile()
 		{
 			//WriteLn("\tpush\taf");
 			if (Lhs->HasTargetRegister) {
-				if (Rhs->HasStaticValue && Rhs->Value == 1) 
+				if (Rhs->HasStaticValue && Rhs->Value == 1)
 				{
 					WriteLn("\tinc\t%s", RSMx(Lhs->TargetRegister));
 				}
@@ -173,16 +178,16 @@ void PlusExpr::Compile()
 				TargetRegister = Lhs->TargetRegister;
 				HasTargetRegister = true;
 			}
-			else 
+			else
 			{
 				ERegister reg = Lhs->Size == 1 ? ERegister::A : ERegister::HL;
 				auto reg_s = RSMx(reg);
 				WriteLn(S_LOAD, reg_s, Lhs->Target.c_str());
-				if (Rhs->HasStaticValue && Rhs->Value == 1) 
+				if (Rhs->HasStaticValue && Rhs->Value == 1)
 				{
 					WriteLn("\tinc\t%s", reg_s);
 				}
-				else if (Rhs->HasStaticValue && Rhs->Value == 2) 
+				else if (Rhs->HasStaticValue && Rhs->Value == 2)
 				{
 					WriteLn("\tinc\t%s", reg_s);
 					WriteLn("\tinc\t%s", reg_s);
@@ -249,66 +254,119 @@ void FunctionCallExpr::Compile()
 	WriteLn("\tcall\t%s", decl->GetIdentifier().c_str());
 }
 
-void IdentExpr::Compile()
+bool FindDirectReplacement(ExpressionNode *node, string name)
 {
-	auto name = GetName();
-
 	// Look up direct replacement
 	auto direct = Definitions[name];
 	if (!direct.empty())
 	{
-		Trace(this, "Found direct replacement <%s> => <%s>", name.c_str(), direct.c_str());
-		Name = ""; // Name gets replaced
-		Target = direct;
-		return;
+		Trace(node, "Found direct replacement <%s> => <%s>", name.c_str(), direct.c_str());
+		node->Name = ""; // Name gets replaced
+		node->Target = direct;
+		return true;
 	}
+	return false;
+}
 
+bool FindReplacement(IdentExpr *node)
+{
 	// Look up replacement
-	auto identifier = GetIdentifier();
+	auto identifier = node->GetIdentifier();
 	auto replacement = Definitions[identifier];
 	if (!replacement.empty())
 	{
-		Trace(this, "Found replacement <%s> => <%s>", identifier.c_str(), replacement.c_str());
-		Name = ""; // Name gets replaced
-		Target = replacement;
-		return;
+		Trace(node, "Found replacement <%s> => <%s>", identifier.c_str(), replacement.c_str());
+		node->Name = ""; // Name gets replaced
+		node->Target = replacement;
+		return true;
 	}
+	return false;
+}
 
-	auto ref = GetReferenced();
-	if (ref == NULL)
-	{
-		if (auto def = DefinitionsHashed[name.c_str()])
-		{
-			Trace(this, "Found definition <%s> => <%s>", name.c_str(), def);
-			int num = ParseNumber(def);
-			if (num == -1) Size = 0;
-			else Size = num > 255 ? 2 : 1;
-		}
-		else
-		{
-			Error(this, "Cannot resolve id <%s>", name.c_str());
-		}
-		Target = name;
-	}
-	else 
+bool FindReferenced(IdentExpr *node, string name)
+{
+	auto ref = node->GetReferenced();
+	if (ref)
 	{
 		if (auto parameter = dynamic_cast<ParameterNode *>(ref))
 		{
-			SetTargetRegister(parameter->Register);
+			node->SetTargetRegister(parameter->Register);
 		}
 		else if( auto result = dynamic_cast<ResultNode *>(ref))
 		{
-			SetTargetRegister(result->Register);
+			node->SetTargetRegister(result->Register);
 		}
 		else if( auto ident_reg = dynamic_cast<IdentRegExpr *>(ref))
 		{
-			SetTargetRegister(ident_reg->TargetRegister);
+			node->SetTargetRegister(ident_reg->TargetRegister);
 		}
 		else
 		{
-			Target = name;
+			node->Target = name;
+		}
+		return true;
+	}
+	return false;
+}
+
+bool FindDefinition(ExpressionNode *node, string name)
+{
+	// Search in z80 include files
+	if (auto def = DefinitionsHashed[name.c_str()])
+	{
+		Trace(node, "Found definition <%s> => <%s>", name.c_str(), def);
+		int num = ParseNumber(def);
+		if (num == -1) node->Size = 0;
+		else node->Size = num > 255 ? 2 : 1;
+		node->Target = name;
+		return true;
+	}
+	return false;
+}
+
+bool FindStruct(IdentExpr *node)
+{
+	auto ref = node->GetReferenced(false);
+	if (ref)
+	{
+		if (auto parameter = dynamic_cast<ParameterNode *>(ref))
+		{
+			if (parameter->HasType)
+			{
+				auto typeRef = parameter->Type->GetReferenced();
+				if (typeRef)
+				{
+					if (auto structNode = dynamic_cast<StructNode *>(typeRef))
+					{
+						for (auto structDef : structNode->Definitions->Children)
+						{
+							auto defName = node->Children.back();
+							if (strcmp(structDef->Name.c_str(), defName->c_str()) == 0)
+							{
+								stringstream ss;
+								ss << "(ix + " << structDef->Offset << ")";
+								node->Target = ss.str();
+								return true;
+							}
+						}
+					}
+				}
+			}
 		}
 	}
+	return false;
+}
+
+void IdentExpr::Compile()
+{
+	auto name = GetName();
+	if (FindDirectReplacement(this, name)) return;
+	if (FindReplacement(this)) return;
+	if (FindReferenced(this, name)) return;
+	if (FindDefinition(this, name)) return;
+	if (FindStruct(this)) return;
+
+	Error(this, "Cannot resolve id <%s>", name.c_str());
 }
 
 void AssignStmt::Compile()
@@ -352,6 +410,10 @@ void AssignStmt::Compile()
 				if (ref)
 				{
 					WriteLoad(Lhs->TargetRegister, ref->GetIdentifier());
+				}
+				else if (!Rhs->Target.empty())
+				{
+					WriteLoad(Lhs->TargetRegister, Rhs->Target);
 				}
 				else
 				{

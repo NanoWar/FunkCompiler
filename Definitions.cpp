@@ -15,7 +15,10 @@
 #define GetCurrentDir getcwd
 #endif
 
+// Normal definitions from funk code like "q = hl" or "q = 50"
 unordered_map<string, string> Definitions = unordered_map<string, string>();
+
+// Definitions from z80 include files like "gbuf = 1234h"
 unordered_map<const char *, char *, char_ptr_hasher, char_ptr_equals> DefinitionsHashed = unordered_map<const char *, char *, char_ptr_hasher, char_ptr_equals>();
 
 vector<char *>buffers;
@@ -91,7 +94,7 @@ int ParseNumber(char *ptr)
 		ss >> result;
 	}
 	else if(*(SkipWord(ptr)-1) == 'h')
-	{  
+	{
 		ss << std::hex << ptr;
 		ss >> result;
 	}
