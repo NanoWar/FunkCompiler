@@ -73,25 +73,16 @@ public:
 		return(OwnType *) this;
 	}
 
-	void Evaluate()
-	{
-		for (auto child = Children.begin(); child != Children.end(); ++child) {
-			(*child)->Evaluate();
-		}
+	void Evaluate() {
+		for (auto child = Children) child->Evaluate();
 	}
 
-	void Compile()
-	{
-		for (auto child = Children.begin(); child != Children.end(); ++child) {
-			(*child)->Compile();
-		}
+	void Compile() {
+		for (auto child = Children) child->Compile();
 	}
 
-	~ContainerNode()
-	{
-		for (auto child = Children.begin(); child != Children.end(); ++child) {
-			delete *child;
-		}
+	~ContainerNode() {
+		for (auto child : Children) delete child;
 	}
 };
 
@@ -310,9 +301,7 @@ public:
 
 	void Compile_Setup()
 	{
-		for (auto setup = Setups.begin(); setup != Setups.end(); ++setup) {
-			(*setup)->Compile();
-		}
+		for (auto setup : Setups) setup->Compile();
 	}
 };
 
@@ -359,7 +348,6 @@ public:
 
 	void Compile();
 };
-
 
 class RegisterExpr : public ExpressionNode
 {
@@ -415,7 +403,6 @@ public:
 	void Compile();
 	void Evaluate();
 };
-
 
 class ModuleNode : public StatementNode
 {
@@ -603,7 +590,6 @@ public:
 	void Compile();
 };
 
-
 class SaveListNode : public StatementNode
 {
 public:
@@ -615,11 +601,8 @@ public:
 	SaveListNode *Extend(ERegister reg) { Registers.push_back(reg); return this; }
 	SaveListNode *Extend(IdentExpr *ident) { Idents.push_back(ident); ident->Parent = this; return this; }
 
-	~SaveListNode()
-	{
-		for (auto ident = Idents.begin(); ident != Idents.end(); ++ident) {
-			delete *ident;
-		}
+	~SaveListNode() {
+		for (auto ident : Idents) delete ident;
 	}
 };
 
@@ -637,8 +620,7 @@ public:
 		Statements->Parent = this;
 	}
 
-	~SaveStmt()
-	{
+	~SaveStmt() {
 		delete SaveList;
 		delete Statements;
 	}
@@ -657,12 +639,68 @@ public:
 		Exprs->Parent = this;
 	}
 
-	~ReturnNode()
-	{
+	~ReturnNode() {
 		delete Exprs;
 	}
 
 	void Compile();
+};
+
+class StructDefNode : public Node
+{
+public:
+	// Byte (1) or Word (2)
+	int Size;
+	int Offset;
+
+	StructDefNode(YYLTYPE loc, string name, int size)
+		: Size(size),
+		Node(loc)
+	{
+		Name = name;
+	}
+
+	void Evaluate();
+};
+
+class StructDefsNode : public ContainerNode < StructDefsNode, StructDefNode >
+{
+private:
+	int Offset;
+
+public:
+	StructDefsNode() {
+		Offset = 0;
+	}
+
+	StructDefsNode *Extend(StructDefNode *node)
+	{
+		ContainerNode::Extend(node);
+		node->Offset = Offset;
+		Offset += node->Size;
+		return this;
+	}
+};
+
+class StructNode : public Node
+{
+public:
+	StructDefsNode *Definitions;
+
+	StructNode(YYLTYPE loc, string name, StructDefsNode *defs)
+		: Definitions(defs),
+		Node(loc)
+	{
+		Name = name;
+		Definitions->Parent = this;
+	}
+
+	~StructNode()
+	{
+		delete Definitions;
+	}
+
+	void Evaluate();
 };
 
 #endif

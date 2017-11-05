@@ -90,7 +90,7 @@ return 		{ return RETURN; }
 fn 			{ return FN; }
 mod 		{ return MOD; }
 enum 		{ return ENUM; }
-struct 		{ return STRUCT; }
+dat 		{ return DAT; }
 
 true 		{ return tTRUE; }
 false 		{ return tFALSE; }

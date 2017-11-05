@@ -41,6 +41,9 @@ extern StatementsNode *Program;
  ResultsNode *fn_decl_results;
  ResultNode *fn_decl_result;
  SaveListNode *save_list;
+ StructNode *data;
+ StructDefsNode *data_defs;
+ StructDefNode *data_def;
 }
 
 %debug
@@ -61,6 +64,9 @@ extern StatementsNode *Program;
 %type <fn_decl_results> fn_decl_results_maybe fn_decl_results
 %type <fn_decl_result> fn_decl_result
 %type <save_list> save_list
+%type <data> data
+%type <data_defs> data_defs
+%type <data_def> data_def
 
 
 %token <token> SHL SHR
@@ -76,7 +82,7 @@ extern StatementsNode *Program;
 
 // Keywords
 %token <token> LET IF ELIF ELSE MATCH LOOP END RETURN SAVE
-%token <token> MOD FN ENUM STRUCT
+%token <token> MOD FN ENUM DAT
 %token <token> tTRUE tFALSE
 
 // Types
@@ -106,6 +112,8 @@ program
 // STATEMENTS
 ////////////////////////////////////////////////////////////////////////
 
+// TODO Toplevel statements (cannot do mod{if})
+
 stmts
 : /* empty */		{ $$ = new StatementsNode(); }
 | stmt				{ $$ = new StatementsNode(); $$->Extend($<stmt>1); }
@@ -113,9 +121,12 @@ stmts
 ;
 
 stmt
-: asm
-| mod
+// Top level
+: mod
 | fn_decl
+| data
+// Sub level
+| asm
 | fn_call			{ $$ = new FunctionCallStmt(@$, $<fn_call>1); }
 | assign
 | if
@@ -190,6 +201,18 @@ returns
 : RETURN exprs					{ $$ = new ReturnNode(@$, $<exprs>2); }
 ;
 
+data
+: DAT name '{' data_defs '}'	{ $$ = new StructNode(@$, *$<str>2, $<data_defs>4); delete $2; }
+;
+data_defs
+: /* empty */					{ $$ = new StructDefsNode(); }
+| data_def						{ $$ = new StructDefsNode(); $$->Extend($<data_def>1); }
+| data_defs data_def			{ $1->Extend($<data_def>2); }
+;
+data_def
+: name ':' tBYTE				{ $$ = new StructDefNode(@$, *$<str>1, 1); delete $1; }
+| name ':' tWORD				{ $$ = new StructDefNode(@$, *$<str>1, 2); delete $1; }
+;
 
 ////////////////////////////////////////////////////////////////////////
 // EXPRESSIONS

@@ -57,7 +57,7 @@ void AssignStmt::Evaluate()
 			Error(this, "Register <%s> is immutable", RSMx(reg));
 			return;
 		}
-		
+
 		pool->SetUsage(this, reg, ERegisterUsage::USED);
 	}
 }
@@ -82,7 +82,7 @@ void CompareExpr::Evaluate()
 		HasStaticValue = true;
 		return;
 	}
-	
+
 	if(Lhs->HasTargetRegister)
 	{
 		AssignStmt *assign;
@@ -137,4 +137,15 @@ void FunctionDeclNode::Evaluate()
 	Parameters->Evaluate();
 	Results->Evaluate();
 	Statements->Evaluate();
+}
+
+void StructNode::Evaluate()
+{
+	RegisterId(this);
+	Definitions->Evaluate();
+}
+
+void StructDefNode::Evaluate()
+{
+	RegisterId(this);
 }
