@@ -110,6 +110,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
+		if (expect_input_string) { Error("No code specified"); return -1; }
 		if (!input_file) { Error("No input file specified"); return -1; }
 		if (input_file_name.empty())
 		{
@@ -129,8 +130,7 @@ int main(int argc, char **argv)
 			}
 			Print("Processing <%s>", input_file_name.c_str());
 		}
-		Trace("=====================");
-		Trace("Step 1: Parsing ...");
+		Print("Parsing ...");
 	}
 
 
@@ -140,13 +140,11 @@ int main(int argc, char **argv)
 	if (!yyparse_ret)
 	{
 		// Evaluate
-		Trace("=====================");
-		Trace("Step 2: Analyzing ...");
+		Print("Analyzing ...");
 		Program->Evaluate();
 
 		// Compile
-		Trace("=====================");
-		Trace("Step 3: Emitting ...");
+		Print("Emitting ...");
 		WriteProgStart();
 		Program->Compile();
 
@@ -166,7 +164,7 @@ int main(int argc, char **argv)
 	}
 	for(auto it = buffers.begin(); it != buffers.end(); ++it) delete[] *it;
 	
-	Trace("=====================");
+	Print("It took %.2f seconds", std::chrono::duration_cast<chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() / 1000.0);
 	if (errors)
 	{
 		SetConsoleAttributes(Console::RED);
@@ -179,11 +177,15 @@ int main(int argc, char **argv)
 	}
 	RestoreConsoleAttributes();
 
-	Trace("It took %.2f seconds", std::chrono::duration_cast<chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() / 1000.0);
 	return yyparse_ret;
 }
 
-void yyerror(string file_name, char const *error) {
+void yyerror(string file_name, char const *error)
+{
 	errors++;
-	Error("%4d %s: %s", yylineno, yylloc.file_name.c_str(), error);
+	if (!quiet)
+	{
+		printf("%4d %s: ", yylineno, yylloc.file_name.c_str());
+		Error(error);
+	}
 }

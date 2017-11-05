@@ -25,6 +25,7 @@ extern StatementsNode *Program;
  void *unknown;
  int token;
  string *str;
+ NumberExpr *number;
  ExpressionsNode *exprs;
  ExpressionNode *expr;
  FunctionCallExpr *fn_call;
@@ -47,6 +48,7 @@ extern StatementsNode *Program;
 
 %type <str> name
 %type <ident> ident
+%type <number> number integer
 %type <reg> reg
 %type <ident_reg> ident_reg
 %type <stmts> stmts program else
@@ -201,9 +203,9 @@ exprs
 expr
 : ident						{ $$ = $<ident>1; }
 | fn_call					{ $$ = $<fn_call>1; }
-| tINTEGER					{ $$ = new NumberExpr(string(yytext)); }
 | tCHARS					{ $$ = new CharsExpr(string(yytext)); }
 | tSTRING					{ $$ = new StringExpr(@$, string(yytext)); }
+| number					{ $$ = $<number>1; }
 | reg						{ $$ = new RegisterExpr($<reg>1); }
 | expr '+' expr				{ $$ = new PlusExpr($<expr>1, $<expr>3); }
 | expr EQEQ expr			{ $$ = new CompareExpr(@$, $<expr>1, $<expr>3);}
@@ -220,6 +222,14 @@ expr
 | '(' expr ')'				{ $$ = $<expr>2; }
 ;
 
+number
+: integer						{ $$ = $<number>1; }
+| '(' integer ',' integer ')'	{ $$ = new NumberExpr(@$, $<number>2, $<number>4); }
+;
+
+integer
+: tINTEGER						{ $$ = new NumberExpr(string(yytext)); }
+;
 
 ////////////////////////////////////////////////////////////////////////
 // IDENTIFIERS

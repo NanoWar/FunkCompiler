@@ -139,7 +139,9 @@ public:
 
 	ExpressionNode(YYLTYPE loc) : Node(loc)
 	{
-		ExpressionNode();
+		HasTargetRegister = false;
+		HasStaticValue = false;
+		Size = 1;
 	}
 
 	bool IsValid()
@@ -227,12 +229,26 @@ public:
 	{
 		Target = str;
 		HasStaticValue = true;
-		int number = stoi(str);
-		Value = number;
-		if (number > 256 || number < -127)
-			Size = 2;
-		else
-			Size = 1;
+		Value = stoi(str);
+		Size = Value > 255 || Value < -127 ? 2 : 1;
+	}
+
+	// Word
+	NumberExpr(YYLTYPE loc, NumberExpr *hi, NumberExpr *lo)
+		: ExpressionNode(loc)
+	{
+		if (hi->Size > 1)
+		{
+			Error(this, "Compound high number part (%d) is larger than one byte", hi->Value);
+		}
+		if (lo->Size > 1)
+		{
+			Error(this, "Compound low number part (%d) is larger than one byte", lo->Value);
+		}
+		Size = 2;
+		HasStaticValue = true;
+		Value = hi->Value * 256 + lo->Value;
+		Target = to_string(Value);
 	}
 };
 
