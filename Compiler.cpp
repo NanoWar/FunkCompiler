@@ -224,6 +224,7 @@ void FunctionCallExpr::Compile()
 	if (!decl)
 	{
 		// Fall back
+		Error(this, "Could not find function <%s>", Ident->GetName().c_str());
 		WriteLn("\tcall\t%s", Ident->GetName().c_str());
 		return;
 	}
@@ -231,26 +232,29 @@ void FunctionCallExpr::Compile()
 	auto decl_params = decl->Parameters;
 	if (decl_params->Children.size() != Parameters->Children.size())
 	{
-		Warn(this, "Parameter mismatch of function <%s>", decl->GetIdentifier().c_str());
+		Error(this, "Parameter mismatch of function <%s>", decl->GetIdentifier().c_str());
+		WriteLn("\tcall\t%s", decl->GetIdentifier().c_str());
+		return;
 	}
-	else
-	{
-		// Parameters are compiled here (inside assign)
-		for (unsigned int i = 0; i < Parameters->Children.size(); i++)
-		{
-			auto assign = new AssignStmt(SourceLoc, decl_params->Children[i]->Register, Parameters->Children[i]);
-			assign->Parent = this;
-			assign->Compile();
-		}
 
-		auto returns = decl->Results->Children;
-		if(returns.size() == 1)
-		{
-			HasTargetRegister = true;
-			TargetRegister = returns[0]->Register;
-			Size = REG_SIZE(TargetRegister);
-		}
+	// Parameters are compiled here (inside assign)
+	for (unsigned int i = 0; i < Parameters->Children.size(); i++)
+	{
+		// TODO: Place assign statement during evaluation into SETUP_NODES
+		auto assign = new AssignStmt(SourceLoc, decl_params->Children[i]->Register, Parameters->Children[i]);
+		assign->Parent = this;
+		assign->Evaluate();
+		assign->Compile();
 	}
+
+	auto returns = decl->Results->Children;
+	if(returns.size() == 1)
+	{
+		HasTargetRegister = true;
+		TargetRegister = returns[0]->Register;
+		Size = REG_SIZE(TargetRegister);
+	}
+
 	WriteLn("\tcall\t%s", decl->GetIdentifier().c_str());
 }
 
