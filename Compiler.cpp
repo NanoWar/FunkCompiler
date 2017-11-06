@@ -435,55 +435,62 @@ void AssignStmt::Compile()
 
 void SaveStmt::Compile()
 {
-	vector<ERegister> saved_registers;
+	auto pool = GetRegisterPool();
+	vector<tuple<ERegister, RegisterUsageInfo>> saved_registers;
 	for (auto ident = SaveList->Idents.begin(); ident != SaveList->Idents.end(); ++ident)
 	{
+		ERegister saved_register = ERegister::NONE;
 		auto ref = (*ident)->GetReferenced();
 		if (auto assign = dynamic_cast<AssignStmt *>(ref))
 		{
 			if (assign->Rhs->HasTargetRegister)
 			{
-				saved_registers.push_back(assign->Rhs->TargetRegister);
-				WriteLn("\tpush\t%s", RSMx(assign->Rhs->TargetRegister));
+				saved_register = assign->Rhs->TargetRegister;
 			}
 			else
 			{
 				Error(this, "Cannot save <%s> because it has no attached register", (*ident)->GetName().c_str());
+				continue;
 			}
 		}
 		else if (auto parameter = dynamic_cast<ParameterNode *>(ref))
 		{
-			saved_registers.push_back(parameter->Register);
-			WriteLn("\tpush\t%s", RSMx(parameter->Register));
+			saved_register = parameter->Register;
 		}
 		else if (auto result = dynamic_cast<ResultNode *>(ref))
 		{
-			saved_registers.push_back(result->Register);
-			WriteLn("\tpush\t%s", RSMx(result->Register));
+			saved_register = result->Register;
 		}
 		else if (auto new_ident = dynamic_cast<IdentRegExpr *>(ref))
 		{
-			saved_registers.push_back(new_ident->TargetRegister);
-			WriteLn("\tpush\t%s", RSMx(new_ident->TargetRegister));
+			saved_register = new_ident->TargetRegister;
 		}
 		else
 		{
 			Error(this, "Cannot resolve reference <%s>", (*ident)->GetName().c_str());
+			continue;
 		}
-	}
-	for (auto reg = SaveList->Registers.begin(); reg != SaveList->Registers.end(); ++reg)
-	{
-		saved_registers.push_back(*reg);
-		WriteLn("\tpush\t%s", RSMx(*reg));
+
+		saved_registers.emplace_back(saved_register, pool->GetUsageInfo(saved_register));
 	}
 
-	//TODO: Open new register scope
+	// Add simple registers
+	for (auto reg : SaveList->Registers) {
+		saved_registers.emplace_back(reg, pool->GetUsageInfo(reg));
+	}
+
+	// Push everything
+	for (auto reg : saved_registers) {
+		WriteLn("\tpush\t%s", RSMx(get<0>(reg)));
+		pool->SetUsage(this, get<0>(reg), ERegisterUsage::FREE);
+	}
 
 	// Compile inner statements
 	Statements->Compile();
 
-	for (auto reg = saved_registers.crbegin(); reg != saved_registers.crend(); ++reg)
-	{
-		WriteLn("\tpop\t%s", RSMx(*reg));
+	// Pop everything
+	for (auto reg : saved_registers) {
+		WriteLn("\tpop\t%s", RSMx(get<0>(reg)));
+		pool->SetUsageInfo(this, get<0>(reg), get<1>(reg));
 	}
 }
