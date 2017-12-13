@@ -197,9 +197,9 @@ public:
 		Size = 2; // TODO: check if 2 is good default
 	}
 
-	Node *GetReferenced(bool includeOwn = true);
+	Node *GetReferenced(bool includeLast = true);
 
-	string GetName(bool includeOwn = true);
+	string GetName();
 
 	void Evaluate();
 	void Compile();
@@ -701,6 +701,8 @@ class StructNode : public Node
 {
 public:
 	StructDefsNode *Definitions;
+
+	// TODO also allow other registers, but then struct size must match register size
 
 	StructNode(YYLTYPE loc, string name, StructDefsNode *defs)
 		: Definitions(defs),

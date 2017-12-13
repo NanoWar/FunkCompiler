@@ -217,14 +217,20 @@ void PlusExpr::Compile()
 
 void FunctionCallExpr::Compile()
 {
+	auto functionName = Ident->GetName();
 	Ident->Compile();
+	if (Ident->Name.empty()) // Ident->Name is reset when referencing a value
+	{
+		Error(this, "Ambiguous reference found for <%s>", functionName.c_str());
+		return;
+	}
 
 	// Find declaration
 	auto decl = dynamic_cast<FunctionDeclNode*>(Ident->GetReferenced());
 	if (!decl)
 	{
+		Warn(this, "Could not find function <%s>", Ident->GetName().c_str());
 		// Fall back
-		Error(this, "Could not find function <%s>", Ident->GetName().c_str());
 		WriteLn("\tcall\t%s", Ident->GetName().c_str());
 		return;
 	}

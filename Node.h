@@ -28,6 +28,7 @@ public:
 		SourceLoc.file_name = yylloc.file_name;
 	}
 
+	virtual string GetName() { return Name; }
 	string GetIdentifier();
 	virtual void Evaluate() { }
 	virtual void Compile() { }

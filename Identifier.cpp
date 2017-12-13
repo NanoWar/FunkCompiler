@@ -12,7 +12,7 @@ string Node::GetIdentifier()
 	if(!id.empty()) return id;
 
 	vector<string> path;
-	path.push_back(Name);
+	path.push_back(GetName());
 	Node *parent = Parent;
 	while(parent) {
 		// Jump over unnamed container Nodes
@@ -27,28 +27,28 @@ string Node::GetIdentifier()
 	return result;
 }
 
-// Helper
-vector<string> GetNames(IdentExpr *node, bool includeOwn)
+// Helper method to get names. Optionally exclude last name, e.g. in "Some.Data" will become only "Some"
+vector<string> GetNames(IdentExpr *node, bool includeLast)
 {
-	vector<string> path;
-	path.push_back(node->Name);
-	for (int i = 0; i < (int) node->Children.size() - (includeOwn ? 0 : 1); i++)
+	vector<string> names;
+	names.push_back(node->Name);
+	for (int i = 0; i < (int) node->Children.size() - (includeLast ? 0 : 1); i++)
 	{
-		path.push_back(*(node->Children.at(i)));
+		names.push_back(*(node->Children.at(i)));
 	}
-	return path;
+	return names;
 }
 
-string IdentExpr::GetName(bool includeOwn)
+string IdentExpr::GetName()
 {
-	string name = join(GetNames(this, includeOwn), ".");
+	string name = join(GetNames(this, true), ".");
 	return name;
 }
 
-Node *IdentExpr::GetReferenced(bool includeOwn)
+Node *IdentExpr::GetReferenced(bool includeLast)
 {
 	// Build own name and copy
-	vector<string> names = GetNames(this, includeOwn);
+	vector<string> names = GetNames(this, includeLast);
 	string name = join(names, ".");
 	vector<string> path(names.begin(), names.end()); // copy
 

@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	}
 
 	SetConsoleAttributes(Console::WHITE);
-	Print("Funk Z80 ASM Transpiler 1.0");
+	Print("Funk Z80 ASM Transpiler 0.1");
 	if (verbose) Print("-> verbose mode");
 	if (yydebug) Print("-> debug mode");
 	RestoreConsoleAttributes();
@@ -101,7 +101,6 @@ int main(int argc, char **argv)
 		Print("\nby Robert Kuhfss");
 		return 0;
 	}
-
 
 	if (repl)
 	{
@@ -133,7 +132,6 @@ int main(int argc, char **argv)
 		Print("Parsing ...");
 	}
 
-
 	// Parse
 	int yyparse_ret = yyparse(input_file_name_full);
 
@@ -152,7 +150,6 @@ int main(int argc, char **argv)
 		CompileCurrentStrings();
 	}
 
-
 	// Safety flush
 	fflush(output_file);
 
@@ -163,7 +160,7 @@ int main(int argc, char **argv)
 		remove(tmp_file);
 	}
 	for(auto it = buffers.begin(); it != buffers.end(); ++it) delete[] *it;
-	
+
 	Print("It took %.2f seconds", std::chrono::duration_cast<chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() / 1000.0);
 	if (errors)
 	{

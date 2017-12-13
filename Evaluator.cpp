@@ -12,7 +12,7 @@
 bool Register(string str, Node *node)
 {
 	if (StringToNode[str]) {
-		Trace(node, "Id <%s> is already registered", str.c_str());
+		Error(node, "Id <%s> is already registered", str.c_str());
 		return false;
 	}
 	else {
